@@ -1,9 +1,8 @@
-import enum
-
 import pygame
 
 
 class EventManager:
+
     def __init__(self):
         self._is_quit = False
 
@@ -44,16 +43,16 @@ class EventManager:
 
     def is_quit(self) -> bool:
         return self._is_quit
-    
+
     def get_mouse_pos(self) -> tuple[int, int]:
         return pygame.mouse.get_pos()
-    
+
     def is_mouse_up(self, button: int) -> bool:
         return self._is_mouse_up.get(button, False)
-    
+
     def is_mouse_down(self, button: int) -> bool:
         return self._is_mouse_down.get(button, False)
-    
+
     def is_mouse_pressing(self, button: int) -> bool:
         return self._is_mouse_pressing.get(button, False)
 
