@@ -7,6 +7,9 @@ class Window:
         self.width = 0
         self.height = 0
 
+    def get_center(self) -> tuple[int, int]:
+        return (self.width / 2, self.height / 2)
+
     @property
     def size(self) -> tuple[int, int]:
         return (self.width, self.height)

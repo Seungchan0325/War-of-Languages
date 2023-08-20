@@ -1,3 +1,5 @@
+import platform
+
 import pygame
 
 from game_config import GameConfig
@@ -25,7 +27,10 @@ class Game:
     # return False if failed to init
     def init(self) -> bool:
         self._window = window.Window()
-        self._window.size = self._window.get_screen_size()
+        if platform.system() == "Window":
+            self._window.size = self._window.get_screen_size()
+        else:
+            self._window.size = (1920, 1080)
 
         pygame.init()
         pygame.display.set_caption(GameConfig.name)
