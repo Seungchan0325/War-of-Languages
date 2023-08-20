@@ -3,8 +3,10 @@ import platform
 import pygame
 
 from game_config import GameConfig
-from system.event_manager import EventManager
-from system.scene_manager import SceneManager
+from system.systems import (
+    EventManager,
+    SceneManager,
+)
 from scenes.scene_title import SceneTitle
 from window import Window
 
