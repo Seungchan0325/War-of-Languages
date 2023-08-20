@@ -2,6 +2,8 @@ import pygame
 
 import game_config
 import utils
+import scene_manager
+from scenes import scene_title
 
 
 class Game:
@@ -9,9 +11,10 @@ class Game:
     def __init__(self):
         self.config = None
 
-        self._screen_size = None
         self._screen = None
         self._clock = None
+
+        self._scene_manager = None
 
         self._running = None
 
@@ -28,6 +31,8 @@ class Game:
         self._screen = pygame.display.set_mode(self.config.screen_size, pygame.FULLSCREEN)
         self._clock = pygame.time.Clock()
 
+        self._scene_manager = scene_manager.SceneManager(scene_title.SceneTitle())
+
         return True
 
     def loop(self):
@@ -37,6 +42,9 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self._running = False
+
+            self._scene_manager.update()
+            self._scene_manager.render(self._screen)
 
             pygame.display.flip()
 
