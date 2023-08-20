@@ -1,29 +1,22 @@
 import pygame
 
+import game_config
 import utils
 
 
 class Game:
 
-    def __new__(cls):
-        if not hasattr(cls, "_instance"):
-            cls._instance = super(Game, cls).__new__(cls)
-        return cls._instance
-
     def __init__(self):
-        cls = type(self)
-        if not hasattr(cls, "_init"):
+        self.config = game_config.GameConfig(
+            "War of Languages",
+            30
+        )
 
-            self._caption = "War of Languages"
-            self._fps = 30
+        self._screen_size = None
+        self._screen = None
+        self._clock = None
 
-            self._screen_size = None
-            self._screen = None
-            self._clock = None
-
-            self._running = None
-
-            cls._init = True
+        self._running = None
 
     # return False if failed to init
     def init(self) -> bool:
