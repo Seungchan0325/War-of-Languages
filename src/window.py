@@ -1,7 +1,9 @@
 import ctypes
 
+from common import SingletonInstane
 
-class Window:
+
+class Window(SingletonInstane):
 
     def __init__(self):
         self.width = 0
@@ -19,7 +21,8 @@ class Window:
         self.width = size[0]
         self.height = size[1]
 
-    def get_screen_size(self) -> tuple[int, int]:
+    @staticmethod
+    def get_screen_size() -> tuple[int, int]:
         u32 = ctypes.windll.user32
         screen_width = u32.GetSystemMetrics(0)
         screen_height = u32.GetSystemMetrics(1)

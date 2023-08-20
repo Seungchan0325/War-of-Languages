@@ -1,12 +1,13 @@
 import pygame
 
 from system import scene_base
+from common import SingletonInstane
 
 
-class SceneManager:
+class SceneManager(SingletonInstane):
 
-    def __init__(self, scene: scene_base.SceneBase):
-        self._scene = scene
+    def __init__(self):
+        self._scene = None
 
     def change_scene(self, scene: scene_base.SceneBase):
         self._scene = scene
