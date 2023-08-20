@@ -1,6 +1,6 @@
 import pygame
 
-import scene_base
+from system import scene_base
 
 
 class SceneManager:

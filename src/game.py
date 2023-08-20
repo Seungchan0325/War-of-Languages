@@ -2,7 +2,7 @@ import pygame
 
 import game_config
 import utils
-import scene_manager
+from system import scene_manager
 from scenes import scene_title
 
 

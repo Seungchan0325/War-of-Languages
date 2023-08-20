@@ -1,6 +1,6 @@
 import pygame
 
-import scene_base
+from system import scene_base
 
 class SceneTitle(scene_base.SceneBase):
 
