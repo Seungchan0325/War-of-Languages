@@ -17,6 +17,12 @@ class Game:
             self._caption = "War of Languages"
             self._fps = 30
 
+            self._screen_size = None
+            self._screen = None
+            self._clock = None
+
+            self._running = None
+
             cls._init = True
 
     # return False if failed to init
