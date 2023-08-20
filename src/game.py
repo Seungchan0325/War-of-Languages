@@ -1,18 +1,18 @@
 import pygame
 
-import game_config
-import utils
+from game_config import GameConfig
 from system import (
     event_manager,
     scene_manager,
 )
 from scenes import scene_title
+import window
 
 
 class Game:
 
     def __init__(self):
-        self.config = None
+        self._window = None
 
         self._screen = None
         self._clock = None
@@ -24,15 +24,12 @@ class Game:
 
     # return False if failed to init
     def init(self) -> bool:
-        self.config = game_config.GameConfig(
-            "War of Languages",
-            30,
-            utils.get_screen_size(),
-        )
+        self._window = window.Window()
+        self._window.size = self._window.get_screen_size()
 
         pygame.init()
-        pygame.display.set_caption(self.config.caption)
-        self._screen = pygame.display.set_mode(self.config.screen_size, pygame.FULLSCREEN)
+        pygame.display.set_caption(GameConfig.name)
+        self._screen = pygame.display.set_mode(self._window.size, pygame.FULLSCREEN)
         self._clock = pygame.time.Clock()
 
         self._event_manager = event_manager.EventManager()
@@ -52,7 +49,7 @@ class Game:
 
             pygame.display.flip()
 
-            self._clock.tick(self.config.fps)
+            self._clock.tick(GameConfig.fps)
 
     def release(self):
         pygame.quit()
