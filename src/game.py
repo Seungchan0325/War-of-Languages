@@ -2,7 +2,10 @@ import pygame
 
 import game_config
 import utils
-from system import scene_manager
+from system import (
+    event_manager,
+    scene_manager,
+)
 from scenes import scene_title
 
 
@@ -14,6 +17,7 @@ class Game:
         self._screen = None
         self._clock = None
 
+        self._event_manager = None
         self._scene_manager = None
 
         self._running = None
@@ -31,6 +35,7 @@ class Game:
         self._screen = pygame.display.set_mode(self.config.screen_size, pygame.FULLSCREEN)
         self._clock = pygame.time.Clock()
 
+        self._event_manager = event_manager.EventManager()
         self._scene_manager = scene_manager.SceneManager(scene_title.SceneTitle())
 
         return True
@@ -39,9 +44,8 @@ class Game:
         self._running = True
 
         while self._running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self._running = False
+            self._event_manager.update()
+            self._running = not self._event_manager.is_quit()
 
             self._scene_manager.update()
             self._scene_manager.render(self._screen)
