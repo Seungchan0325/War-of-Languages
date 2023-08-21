@@ -12,12 +12,18 @@ class MyButton(Button):
         text_color = (255, 255, 255)
         self._title_font = pygame.font.SysFont("arial", 30)
         self._text_idx = 0
-        self._text = (self._title_font.render("Hello", True, text_color),
-                      self._title_font.render("Bye", True, text_color))
+        self._text = (self._title_font.render("", True, text_color),
+                      self._title_font.render("Left", True, text_color),
+                      self._title_font.render("Middle", True, text_color),
+                      self._title_font.render("Right", True, text_color))
 
     def update(self):
-        if self.is_clicked():
-            self._text_idx ^= 1
+        if self.is_left_clicked():
+            self._text_idx = 1
+        elif self.is_middle_clicked():
+            self._text_idx = 2
+        elif self.is_right_clicked():
+            self._text_idx = 3
 
     def render(self, screen: pygame.Surface):
         screen.blit(self._text[self._text_idx], self._rect.topleft)
