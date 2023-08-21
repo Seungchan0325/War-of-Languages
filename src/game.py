@@ -2,6 +2,7 @@ import platform
 
 import pygame
 
+from common import SingletonInstane
 from game_config import GameConfig
 from system.systems import (
     EventManager,
@@ -11,7 +12,7 @@ from scenes.scene_title import SceneTitle
 from window import Window
 
 
-class Game:
+class Game(SingletonInstane):
 
     def __init__(self):
         self._config = None
