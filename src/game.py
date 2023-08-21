@@ -21,8 +21,8 @@ class Game(SingletonInstane):
         self._screen = None
         self._clock = None
 
-        self._event_manager = EventManager.instance()
-        self._scene_manager = SceneManager.instance()
+        self._event_manager = None
+        self._scene_manager = None
 
         self._running = None
 
@@ -41,6 +41,8 @@ class Game(SingletonInstane):
         self._screen = pygame.display.set_mode(self._window.size, pygame.FULLSCREEN)
         self._clock = pygame.time.Clock()
 
+        self._event_manager = EventManager.instance()
+        self._scene_manager = SceneManager.instance()
         self._scene_manager.change_scene(SceneTitle())
 
         return True
