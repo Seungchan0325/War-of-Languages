@@ -1,8 +1,8 @@
 import pygame
 
 from system import scene_base
-from window import Window
 from system.control.button import Button
+from window import Window
 
 
 class MyButton(Button):

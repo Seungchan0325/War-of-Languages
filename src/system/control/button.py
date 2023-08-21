@@ -14,7 +14,7 @@ class Button(abc.ABC):
     def is_on_mouse(self) -> bool:
         mouse_pos = pygame.mouse.get_pos()
         return self._rect.collidepoint(mouse_pos)
-    
+
     def is_clicked(self, button: int) -> bool:
         mouse_down = self._event_manager.is_mouse_down(button)
         return mouse_down and self.is_on_mouse()
