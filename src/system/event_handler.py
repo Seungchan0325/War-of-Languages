@@ -18,6 +18,9 @@ class EventHandler(SingletonInstane):
         self.is_key_down = defaultdict(bool)
         self.is_key_pressing = defaultdict(bool)
 
+    def init(self):
+        pass
+
     def update(self):
         self.is_mouse_up.clear()
         self.is_mouse_down.clear()

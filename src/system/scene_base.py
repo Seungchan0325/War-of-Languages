@@ -5,10 +5,9 @@ import pygame
 
 class SceneBase(abc.ABC):
 
-    @abc.abstractmethod
-    def update(self):
-        pass
+    def __init__(self):
+        self.sprites = pygame.sprite.LayeredDirty()
 
     @abc.abstractmethod
-    def render(self, screen: pygame.Surface):
+    def update(self):
         pass
