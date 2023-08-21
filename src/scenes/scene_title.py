@@ -2,13 +2,12 @@ import pygame
 
 from system import scene_base
 from system.control.button import Button
-from window import Window
 
 
 class MyButton(Button):
 
     def __init__(self):
-        super().__init__(pygame.Rect((Window.instance().get_center(), (100, 100))))
+        super().__init__(pygame.Rect((0, 0), (100, 100)))
         text_color = (255, 255, 255)
         self._title_font = pygame.font.SysFont("arial", 30)
         self._text_idx = 0
@@ -18,11 +17,11 @@ class MyButton(Button):
                       self._title_font.render("Right", True, text_color))
 
     def update(self):
-        if self.is_left_clicked():
+        if self.is_clicked(pygame.BUTTON_LEFT):
             self._text_idx = 1
-        elif self.is_middle_clicked():
+        elif self.is_clicked(pygame.BUTTON_MIDDLE):
             self._text_idx = 2
-        elif self.is_right_clicked():
+        elif self.is_clicked(pygame.BUTTON_RIGHT):
             self._text_idx = 3
 
     def render(self, screen: pygame.Surface):

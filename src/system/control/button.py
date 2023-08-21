@@ -16,19 +16,7 @@ class Button(abc.ABC):
         return self._rect.collidepoint(mouse_pos)
 
     def is_clicked(self, button: int) -> bool:
-        mouse_down = self._event_manager.is_mouse_down(button)
-        return mouse_down and self.is_on_mouse()
-
-    def is_left_clicked(self) -> bool:
-        mouse_down = self._event_manager.is_mouse_down(pygame.BUTTON_LEFT)
-        return mouse_down and self.is_on_mouse()
-
-    def is_middle_clicked(self) -> bool:
-        mouse_down = self._event_manager.is_mouse_down(pygame.BUTTON_MIDDLE)
-        return mouse_down and self.is_on_mouse()
-
-    def is_right_clicked(self) -> bool:
-        mouse_down = self._event_manager.is_mouse_down(pygame.BUTTON_RIGHT)
+        mouse_down = self._event_manager.is_mouse_down[button]
         return mouse_down and self.is_on_mouse()
 
     @abc.abstractmethod
