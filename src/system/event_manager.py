@@ -31,7 +31,7 @@ class EventManager(SingletonInstane):
                 self._is_mouse_up[event.button] = True
                 self._is_mouse_pressing[event.button] = False
 
-            elif event.type == pygame.MOUSEBUTTONUP:
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 self._is_mouse_down[event.button] = True
                 self._is_mouse_pressing[event.button] = True
 
