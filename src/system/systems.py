@@ -1,3 +1,3 @@
-from system.event_manager import EventManager
-from system.scene_manager import SceneManager
+from system.event_handler import EventHandler
+from system.scene_handler import SceneHandler
 from system.scene_base import SceneBase

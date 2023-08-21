@@ -1,3 +1,13 @@
+import ctypes
+
+
+def get_monitor_size() -> tuple[int, int]:
+    u32 = ctypes.windll.user32
+    screen_width = u32.GetSystemMetrics(0)
+    screen_height = u32.GetSystemMetrics(1)
+    return (screen_width, screen_height)
+
+
 class SingletonInstane:
     __instance = None
 

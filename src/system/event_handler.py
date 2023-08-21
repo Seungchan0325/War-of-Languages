@@ -3,7 +3,7 @@ import pygame
 from common import SingletonInstane
 
 
-class EventManager(SingletonInstane):
+class EventHandler(SingletonInstane):
 
     def __init__(self):
         self._is_quit = False

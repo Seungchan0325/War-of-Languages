@@ -2,14 +2,14 @@ import abc
 
 import pygame
 
-from system.systems import EventManager
+from system.systems import EventHandler
 
 
 class Button(abc.ABC):
 
     def __init__(self, rect: pygame.Rect):
         self._rect = rect
-        self._event_manager = EventManager.instance()
+        self._event_manager = EventHandler.instance()
 
     def is_on_mouse(self) -> bool:
         mouse_pos = pygame.mouse.get_pos()

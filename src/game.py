@@ -5,8 +5,8 @@ import pygame
 from common import SingletonInstane
 from game_config import GameConfig
 from system.systems import (
-    EventManager,
-    SceneManager,
+    EventHandler,
+    SceneHandler,
 )
 from scenes.scene_title import SceneTitle
 from window import Window
@@ -41,8 +41,8 @@ class Game(SingletonInstane):
         self._screen = pygame.display.set_mode(self._window.size, pygame.FULLSCREEN)
         self._clock = pygame.time.Clock()
 
-        self._event_manager = EventManager.instance()
-        self._scene_manager = SceneManager.instance()
+        self._event_manager = EventHandler.instance()
+        self._scene_manager = SceneHandler.instance()
         self._scene_manager.change_scene(SceneTitle())
 
         return True

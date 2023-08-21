@@ -4,7 +4,7 @@ from system import scene_base
 from common import SingletonInstane
 
 
-class SceneManager(SingletonInstane):
+class SceneHandler(SingletonInstane):
 
     def __init__(self):
         self._scene = None
