@@ -19,4 +19,4 @@ class Scenes(SingletonInstane):
 
     def render(self):
         screen = Screen.instance()
-        screen.render(self._scene.sprites)
+        screen.render(self._scene.background, self._scene.sprites)

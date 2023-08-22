@@ -51,7 +51,8 @@ class Game(SingletonInstane):
             scenes.update()
             scenes.render()
 
-            self._clock.tick(config.fps)
+            delta_time = self._clock.tick(config.fps)
+            print(delta_time)
 
     def release(self):
         pygame.quit()

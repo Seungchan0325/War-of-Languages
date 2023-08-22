@@ -1,48 +1,61 @@
 import pygame
 
+from system.systems import Screen
 from system import scene_base
 from system.control.button import Button
 
 
 class MyButton(Button):
 
-    def __init__(self):
-        super().__init__(pygame.Rect((0, 0), (100, 100)))
+    def __init__(self, y: int, text: str):
+        screen = Screen.instance()
 
-        self._surface = pygame.Surface(self.rect.size)
-        self._surface.fill("white")
-        self.image = self._surface
-        text_color = (255, 0, 255)
-        self._title_font = pygame.font.SysFont("arial", 30)
-        self._text = (self._title_font.render("", True, text_color),
-                      self._title_font.render("Left", True, text_color),
-                      self._title_font.render("Middle", True, text_color),
-                      self._title_font.render("Right", True, text_color))
+        rect_width = screen.width * 0.28
+        rect_height = screen.height * 0.1
+        rect = pygame.Rect((0, 0), (rect_width, rect_height))
+        rect.centerx = screen.area.centerx
+        rect.y = y
 
-        self._text_idx = 0
+        super().__init__(rect)
+
+        text_color = (255, 255, 255)
+        title_font = pygame.font.SysFont("arial", int(rect.height * 0.43))
+        render_text = title_font.render(text, True, text_color)
+
+        self._render_text = render_text
+
+        surface1 = pygame.Surface(self.rect.size)
+        surface1.fill("purple")
+
+        surface2 = pygame.Surface(self.rect.size)
+        surface2.fill("red")
+
+        text_rect = render_text.get_rect(center=surface1.get_rect().center)
+        surface1.blit(render_text, text_rect)
+        text_rect = render_text.get_rect(center=surface2.get_rect().center)
+        surface2.blit(render_text, text_rect)
+
+        self._surface = (
+            surface1,
+            surface2
+        )
+
+        self._prev_state = self.is_on_mouse()
+        self.image = self._surface[self._prev_state]
 
     def update(self):
-        old_text_idx = self._text_idx
-        if self.is_clicked(pygame.BUTTON_LEFT):
-            self._text_idx = 1
-        elif self.is_clicked(pygame.BUTTON_MIDDLE):
-            self._text_idx = 2
-        elif self.is_clicked(pygame.BUTTON_RIGHT):
-            self._text_idx = 3
-
-        if old_text_idx != self._text_idx:
-            self.dirty = 1
-            self._surface.fill("white")
-            self._surface.blit(self._text[self._text_idx], (0, 0))
-            self.image = self._surface
-
+        pass
 
 class SceneTitle(scene_base.SceneBase):
 
     def __init__(self):
         super().__init__()
+        screen = Screen.instance()
 
-        self.sprites.add(MyButton())
+        play_button_y = screen.height * 0.48
+        settings_button_y = screen.height * 0.63
+        self.sprites.add(MyButton(play_button_y, "{ Play }"))
+        self.sprites.add(MyButton(settings_button_y, "{ Settings }"))
 
     def update(self):
         self.sprites.update()

@@ -1,8 +1,6 @@
-import platform
-
 import pygame
 
-from common import get_monitor_size, SingletonInstane
+from common import SingletonInstane
 
 
 class Screen(SingletonInstane):
@@ -12,15 +10,25 @@ class Screen(SingletonInstane):
         self._screen = None
 
     def init(self):
-        self._screen_size = (1920, 1080)
-        if platform.system() == "Windows":
-            self._screen_size = get_monitor_size()
-        self._screen = pygame.display.set_mode(self._screen_size, pygame.FULLSCREEN)
+        self._screen_size = pygame.Rect((0, 0), pygame.display.get_desktop_sizes()[0])
+        self._screen = pygame.display.set_mode(self._screen_size.size, flags=pygame.FULLSCREEN)
 
-    def render(self, sprites: pygame.sprite.LayeredDirty):
-        updates = sprites.draw(self._screen)
+    def render(self, background: pygame.Surface, sprites: pygame.sprite.LayeredDirty):
+        updates = sprites.draw(self._screen, background)
         pygame.display.update(updates)
 
     @property
-    def screen_size(self) -> pygame.Rect:
+    def area(self) -> pygame.Rect:
         return self._screen_size
+
+    @property
+    def size(self) -> tuple[int, int]:
+        return self._screen_size.size
+
+    @property
+    def width(self) -> int:
+        return self._screen_size.width
+
+    @property
+    def height(self) -> int:
+        return self._screen_size.height
