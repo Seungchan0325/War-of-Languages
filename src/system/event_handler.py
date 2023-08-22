@@ -1,5 +1,5 @@
-from collections import defaultdict
 import dataclasses
+from collections import defaultdict
 
 import pygame
 
@@ -16,22 +16,24 @@ class MouseEvent:
 
 @dataclasses.dataclass
 class KeyEvent:
-    is_updated =  False
-    is_up =  defaultdict(bool)
-    is_down =  defaultdict(bool)
-    is_pressing =  defaultdict(bool)
+    is_updated = False
+    is_up = defaultdict(bool)
+    is_down = defaultdict(bool)
+    is_pressing = defaultdict(bool)
 
 
 class EventHandler(SingletonInstane):
 
     def __init__(self):
-        self._is_quit = False
+        self._is_quit: bool
 
-        self._mouse_event = MouseEvent()
-        self._key_event = KeyEvent()
+        self._mouse_event: MouseEvent
+        self._key_event: KeyEvent
 
     def init(self):
-        pass
+        self._is_quit = False
+        self._mouse_event = MouseEvent()
+        self._key_event = KeyEvent()
 
     def update(self):
         self._mouse_event.is_updated = False

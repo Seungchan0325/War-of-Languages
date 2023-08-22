@@ -2,7 +2,7 @@ import abc
 
 import pygame
 
-from system.systems import EventHandler
+from system.event_handler import EventHandler
 
 
 class Button(abc.ABC, pygame.sprite.DirtySprite):

@@ -2,19 +2,17 @@ import pygame
 
 from common import SingletonInstane
 from game_config import GameConfig
-from system.systems import (
-    EventHandler,
-    Scenes,
-    Screen,
-)
 from scenes.scene_title import SceneTitle
+from system.event_handler import EventHandler
+from system.scenes import Scenes
+from system.screen import Screen
 
 
 class Game(SingletonInstane):
 
     def __init__(self):
-        self._running = None
-        self._clock = None
+        self._running: bool
+        self._clock: pygame.time.Clock
 
     # return False if failed to init
     def init(self) -> bool:
@@ -30,9 +28,7 @@ class Game(SingletonInstane):
 
         event_handler.init()
         screen.init()
-        scenes.init()
-
-        scenes.change_scene(SceneTitle())
+        scenes.init(SceneTitle())
 
         return True
 

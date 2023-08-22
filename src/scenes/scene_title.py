@@ -1,8 +1,8 @@
 import pygame
 
-from system.systems import Screen
-from system import scene_base
 from system.control.button import Button
+from system.scenes import SceneBase
+from system.screen import Screen
 
 
 class MyButton(Button):
@@ -46,7 +46,7 @@ class MyButton(Button):
     def update(self):
         pass
 
-class SceneTitle(scene_base.SceneBase):
+class SceneTitle(SceneBase):
 
     def __init__(self):
         super().__init__()

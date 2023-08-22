@@ -6,8 +6,8 @@ from common import SingletonInstane
 class Screen(SingletonInstane):
 
     def __init__(self):
-        self._screen_size = None
-        self._screen = None
+        self._screen_size: pygame.Rect
+        self._screen: pygame.Surface
 
     def init(self):
         self._screen_size = pygame.Rect((0, 0), pygame.display.get_desktop_sizes()[0])
