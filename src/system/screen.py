@@ -1,6 +1,7 @@
 import pygame
 
 from common import SingletonInstane
+from game_config import GameConfig
 
 
 class Screen(SingletonInstane):
@@ -12,6 +13,9 @@ class Screen(SingletonInstane):
     def init(self):
         self._screen_size = pygame.Rect((0, 0), pygame.display.get_desktop_sizes()[0])
         self._screen = pygame.display.set_mode(self._screen_size.size, flags=pygame.FULLSCREEN)
+
+        caption = GameConfig.instance().name
+        pygame.display.set_caption(caption)
 
     def render(self, background: pygame.Surface, sprites: pygame.sprite.LayeredDirty):
         updates = sprites.draw(self._screen, background)

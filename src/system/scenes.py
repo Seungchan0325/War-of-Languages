@@ -20,15 +20,26 @@ class SceneBase(ABC):
 class Scenes(SingletonInstane):
 
     def __init__(self):
+        self._is_changed: bool
+        self._next_scene: SceneBase
         self._scene: SceneBase
 
     def init(self, scene: SceneBase):
-        self.change_scene(scene)
-
-    def change_scene(self, scene: SceneBase):
+        self._is_changed = False
+        self._next_scene = None
         self._scene = scene
 
+    def change_scene(self, scene: SceneBase):
+        self._is_changed = True
+        self._next_scene = scene
+
     def update(self):
+        if self._is_changed:
+            self._is_changed = False
+
+            self._scene = self._next_scene
+            self._next_scene = None
+
         self._scene.update()
 
     def render(self):
