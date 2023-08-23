@@ -6,6 +6,10 @@ from common import SingletonInstane
 from game_config import GameConfig
 
 
+SECOND_MS = 1000
+SECOND_NS = 1000000
+
+
 class Clock(SingletonInstane):
 
     def __init__(self):
@@ -21,6 +25,9 @@ class Clock(SingletonInstane):
 
     def delta(self) -> int:
         return self._delta
+    
+    def delta_sec(self) -> float:
+        return self._delta / SECOND_MS
 
 
 class Timer:
@@ -31,7 +38,7 @@ class Timer:
         self._is_activated = False
 
     def _time_ms(self) -> int:
-        return time.time_ns() // 1_000_000
+        return time.time_ns() // SECOND_NS
 
     def start(self):
         self._is_activated = True

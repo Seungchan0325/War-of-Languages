@@ -17,5 +17,6 @@ class LoadingScene(SceneBase):
 
     def update(self):
         if self._timer.over():
+            self._timer.stop()
             scenes = Scenes.instance()
             scenes.change_scene(TitleScene())

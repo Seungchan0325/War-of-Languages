@@ -36,3 +36,13 @@ class Screen(SingletonInstane):
     @property
     def height(self) -> int:
         return self._screen_size.height
+
+
+def make_rect(x_ratio: float, y_ratio: float, w_ratio: float, h_ratio: float) -> pygame.Rect:
+    screen = Screen.instance()
+    x = screen.width * x_ratio
+    y = screen.height * y_ratio
+    w = screen.width  * w_ratio
+    h = screen.height * h_ratio
+
+    return pygame.Rect(x, y, w, h)
