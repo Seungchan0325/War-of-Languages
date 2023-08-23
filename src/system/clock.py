@@ -28,16 +28,21 @@ class Timer:
     def __init__(self, ms_: int):
         self._ms = ms_
         self._start = 0
+        self._is_activated = False
 
     def _time_ms(self) -> int:
         return time.time_ns() // 1_000_000
 
     def start(self):
+        self._is_activated = True
         self._start = self._time_ms()
+
+    def stop(self):
+        self._is_activated = False
 
     def remain(self):
         elapsed_time = self._time_ms() - self._start
         return self._ms - elapsed_time
 
     def over(self) -> bool:
-        return 0 >= self.remain()
+        return self._is_activated and self.remain() <= 0

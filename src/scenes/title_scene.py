@@ -3,6 +3,7 @@ import pygame
 from system.control.button import Button
 from system.scenes import SceneBase
 from system.screen import Screen
+from system.clock import Clock, Timer
 from scenes.common import (
     Title,
 )
@@ -38,10 +39,19 @@ class TemplateButton(Button):
 
         self.image = self._surfaces[self._state]
 
+        self._timer = Timer(500)
+
     def update(self):
         if self.is_clicked(pygame.BUTTON_LEFT):
             self.dirty = 1
-            self._state ^= 1
+            self._state = 1
+            self.image = self._surfaces[self._state]
+            self._timer.start()
+
+        if self._timer.over():
+            self._timer.stop()
+            self.dirty = 1
+            self._state = 0
             self.image = self._surfaces[self._state]
 
 
@@ -77,6 +87,33 @@ class SettingsButton(TemplateButton):
         super().__init__(rect, "{ Settings }")
 
 
+class FPS(pygame.sprite.DirtySprite):
+
+    def __init__(self):
+        super().__init__()
+
+        self.dirty = 2
+
+        self.rect = pygame.Rect((0, 0), (100, 100))
+
+        self.image = self._make_surface()
+
+    def _make_surface(self) -> pygame.Surface:
+        text_color = (255, 255, 255)
+        font = pygame.font.SysFont("arial", 18)
+
+        surface = pygame.Surface(self.rect.size)
+
+        clock = Clock.instance()
+        rendered_text = font.render(str(clock.delta()), True, text_color)
+        surface.blit(rendered_text, (0, 0))
+
+        return surface
+
+    def update(self):
+        self.image = self._make_surface()
+
+
 class TitleScene(SceneBase):
 
     def __init__(self):
@@ -85,6 +122,7 @@ class TitleScene(SceneBase):
         self.sprites.add(Title())
         self.sprites.add(PlayButton())
         self.sprites.add(SettingsButton())
+        self.sprites.add(FPS())
 
     def update(self):
         self.sprites.update()
