@@ -17,6 +17,7 @@ class Clock(SingletonInstane):
         self._delta: int
 
     def init(self):
+        self._delta = 1
         self._clock = pygame.time.Clock()
 
     def tick(self):
@@ -25,7 +26,7 @@ class Clock(SingletonInstane):
 
     def delta(self) -> int:
         return self._delta
-    
+
     def delta_sec(self) -> float:
         return self._delta / SECOND_MS
 

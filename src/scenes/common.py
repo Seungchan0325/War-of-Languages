@@ -36,6 +36,41 @@ class Title(pygame.sprite.DirtySprite):
         pass
 
 
+class Text(pygame.sprite.DirtySprite):
+
+    def __init__(self, text: str):
+        super().__init__()
+
+        self.dirty = 1
+
+        self.text = text
+        surface = self._make_surface()
+        self.rect = pygame.Rect((0, 0), surface.get_size())
+
+        self.image = self._make_surface()
+
+    def _make_surface(self) -> pygame.Surface:
+        text_color = (255, 255, 255)
+        font = pygame.font.SysFont("arial", 18)
+
+        rendered_text = font.render(f"{self.text}", True, text_color)
+
+        surface = pygame.Surface(rendered_text.get_size())
+
+        surface.blit(rendered_text, (0, 0))
+
+        return surface
+    
+    def set_text(self, text: str):
+        self.dirty = 1
+        self.text = text
+
+    def update(self):
+        surface = self._make_surface()
+        self.rect = pygame.Rect((0, 0), surface.get_size())
+        self.image = self._make_surface()
+
+
 class FPS(pygame.sprite.DirtySprite):
 
     def __init__(self):

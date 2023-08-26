@@ -2,6 +2,7 @@ import pygame
 
 from common import SingletonInstane
 from scenes.loading_scene import LoadingScene
+from scenes.play_scene import PlayScene
 from system.clock import Clock
 from system.event_handler import EventHandler
 from system.scenes import Scenes

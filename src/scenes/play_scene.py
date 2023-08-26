@@ -3,12 +3,11 @@ import pygame
 from system.screen import Screen
 from system.scenes import SceneBase
 from system.event_handler import EventHandler
-from system.clock import Clock, Timer
-from scenes.common import FPS
+from system.clock import Clock
+from scenes.common import FPS, Text
 
 
 G = 9.80665
-Gv = pygame.math.Vector2(0, -G)
 
 
 """
@@ -37,69 +36,122 @@ def coord2pixel(meter: tuple[float, float]) -> tuple[int, int]:
 class Entity(pygame.sprite.DirtySprite):
 
     # Both pos and size are meters
-    def __init__(self, pos: tuple[float, float], size: tuple[float, float]):
+    def __init__(self, pos: tuple[float, float], size: tuple[float, float], game_sprites: pygame.sprite.Group):
         super().__init__()
 
-        self._acc = pygame.Vector2()
-        self._vel = pygame.Vector2()
+        self.game_sprites = game_sprites
 
-        self.pos = pygame.Vector2(pos)
+        # Pysical Variable
+        self.is_fixed: bool = False
+        self.use_gravity: bool = False
+
+        self.is_colliding: bool = False
+
+        self.mass: float = 1.0
+
+        self.force: pygame.Vector2 = pygame.Vector2()
+
+        self._acc: pygame.Vector2 = pygame.Vector2()
+        self.last_acc: pygame.Vector2 = pygame.Vector2()
+
+        self._vel: pygame.Vector2 = pygame.Vector2()
+        self.last_vel: pygame.Vector2 = pygame.Vector2()
+
+        self.static_friction: float = 0
+        self.dynamic_friction: float = 0
+
+        self.elasticity: float = 1
+
+        self.pos: pygame.Vector2 = pygame.Vector2(pos)
 
         self.rect = pygame.Rect((0, 0), (meter2pixel(size[0]), meter2pixel(size[1])))
         self.rect.bottomleft = coord2pixel((self.pos.x, self.pos.y))
+    
+    def apply_acc(self, acc: pygame.Vector2):
+        pass
 
-    def update(self):
-        self._vel += self._acc
+    def apply_force(self, force: pygame.Vector2):
+        pass
 
-        self.pos += self._vel
+    def apply_impulse(self, impulse: pygame.Vector2):
+        pass
 
-        self.pos.x = pygame.math.clamp(self.pos.x, 0, 15)
-        self.pos.y = pygame.math.clamp(self.pos.y, 0, 8)
+    def change_vel(self, vel: pygame.Vector2):
+        self._vel = vel
+
+    def physical_update(self):
+        if self.is_fixed:
+            return
+
+        if self.use_gravity:
+            self._acc -= pygame.Vector2(0, G)
+
+        collided = pygame.sprite.spritecollide(self, self.game_sprites, False)
+        for other in collided:
+            if other is self:
+                continue
+
+            e = (self.elasticity + other.elasticity) / 2
+
+            m1 = self.mass
+            v1 = self.last_vel
+            m2 = other.mass
+            v2 = other.last_vel
+
+            vel_x = ((e + 1) * m2 * v2.x + v1.x * (m1 - e * m2)) / (m1 + m2)
+            vel_y = ((e + 1) * m2 * v2.y + v1.y * (m1 - e * m2)) / (m1 + m2)
+
+            vel = pygame.Vector2(vel_x, vel_y)
+
+            self.change_vel(vel)
+
+    def object_update(self):
+        if self.is_fixed:
+            return
+
+        self.dirty = 1
+
+        clock = Clock.instance()
+        delta_time = clock.delta_sec()
+
+        self.last_vel = self._vel
+        self.last_acc = self._acc
+
+        self._vel += self._acc * delta_time
+
+        self.pos += self._vel * delta_time
 
         self.rect.bottomleft = coord2pixel((self.pos.x, self.pos.y))
 
 
-class MyCharater(Entity):
+class Border(Entity):
 
     def __init__(self):
-        super().__init__((0, 8), (1, 1))
+        self.mass = 987654321
+        self.is_fixed = True
+        self.use_gravity = True
+
+
+class Block(Entity):
+
+    def __init__(self, game_sprites: pygame.sprite.Group, pos: tuple[int, int], vel: pygame.Vector2, mass: float, color: str):
+        super().__init__(pos, (1, 1), game_sprites)
+
+        self._vel = pygame.Vector2(vel[0], vel[1])
+
+        self.mass = mass
 
         surface = pygame.Surface(self.rect.size)
-        surface.fill("purple")
+        surface.fill(color)
 
         self.image = surface
 
         self.dirty = 2
 
-        self._timer = Timer(0)
-        self._timer.start()
-        self.flag = True
-
     def update(self):
-        event_handler = EventHandler.instance()
-        clock = Clock.instance()
+        super().physical_update()
 
-        print(clock.delta_sec())
-
-        self._acc = pygame.Vector2()
-
-        if self.pos.y == 0 and self.flag:
-            self.flag = False
-            print(self._timer.remain())
-
-        if event_handler.is_key_pressing[pygame.K_a]:
-            self._acc += pygame.Vector2(-4, 0) * clock.delta_sec()
-
-        if event_handler.is_key_pressing[pygame.K_d]:
-            self._acc += pygame.Vector2(4, 0) * clock.delta_sec()
-
-        if self.pos.y == 0 and event_handler.is_key_down[pygame.K_SPACE]:
-            self._acc += pygame.Vector2(0, 2*G + 10) * clock.delta_sec()
-
-        if self.pos.y > 0:
-            self._acc += Gv * clock.delta_sec()
-
-        super().update()
+        # logic
 
 
 class PlayScene(SceneBase):
@@ -107,8 +159,17 @@ class PlayScene(SceneBase):
     def __init__(self):
         super().__init__()
 
-        self.sprites.add(MyCharater())
+        self.play_sprites = pygame.sprite.Group()
+
+        self.play_sprites.add(Block(self.play_sprites, (3, 4), (0, 0), 10, "red"))
+        self.play_sprites.add(Block(self.play_sprites, (15, 4), (-1, 0), 1, "white"))
+
+        self.sprites.add(self.play_sprites)
+
         self.sprites.add(FPS())
 
     def update(self):
+        for sprite in self.play_sprites:
+            sprite.object_update()
+
         self.sprites.update()
