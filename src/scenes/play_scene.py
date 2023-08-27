@@ -1,9 +1,8 @@
-from dataclasses import dataclass
 from time import perf_counter
 
 import pygame
 from pygame import Vector2
-from pygame.sprite import DirtySprite, Group
+from pygame.sprite import Group
 
 from system.screen import Screen
 from system.scenes import SceneBase
@@ -61,40 +60,131 @@ def overlayed_line(start1: float,
     return min(e1, e2) - max(s1, s2)
 
 
-@dataclass
-class PhysicsData:
-    position: Vector2 = Vector2(0, 0)
-    velocity: Vector2 = Vector2(0, 0)
-    force: Vector2
-    inertia: float
-    inverse_inertia: float
-    mass: float
-    inverse_mass: float
-    static_friction: float
-    dynamic_friction: float
-    restitution: float
-    use_gravity: bool
-    is_grounded: bool
-
-
 class RigidBody:
 
-    def __init__(self, data: PhysicsData):
-        self._data = data
+    def __init__(self):
+        self.position: Vector2 = Vector2()
+        self.size: tuple[int, int] = (1, 1)
 
-    def reset(self):
-        self._data.is_grounded = False
+        self.mass: float = 1
+
+        self.velocity: Vector2 = Vector2()
+        self.last_velocity: Vector2 = Vector2()
+        self.force: Vector2 = Vector2()
+        self.acceleration: Vector2 = Vector2()
+        self.impulse: Vector2 = Vector2()
+
+        self.static_friction: float = 0
+        self.dynamic_friction: float = 0
+
+        self.restitution: float = 1
+
+        self.use_gravity: bool = True
+        self.is_grounded: bool = False
+        self.is_colliding: bool = False
+        self.is_fixed: bool = False
+
+    @property
+    def inverse_mass(self) -> float:
+        if self.mass == 0:
+            return 0
+        return 1 / self.mass
+    
+    def apply_force(self, force: Vector2):
+        self.force += force
+
+    def apply_acceleration(self, acceleration: Vector2):
+        self.acceleration += acceleration
+
+    def apply_impulse(self, impulse: Vector2):
+        self.impulse += impulse
+
+    def change_velocity(self, velocity: Vector2):
+        self.velocity = velocity
+
+    def rigid_update(self):
+        delta_time = Clock.instance().delta_sec()
+
+        self.velocity += self.acceleration * delta_time
+        self.velocity += self.acceleration * self.inverse_mass * delta_time
+        self.velocity += self.impulse * self.inverse_mass
+        self.last_velocity = self.velocity
+
+        self.position += self.velocity * delta_time
 
 
 class RigidManager:
-    def __init__(self):
-        self._rigid_bodies: Group
 
-    def update(self):
+    def __init__(self):
+        self.bodies: list[RigidBody] = []
+
+    def add(self, body: RigidBody):
+        self.bodies.append(body)
+
+    def compute_penetration(self, body_a: RigidBody, body_b: RigidBody) -> tuple[float, float]:
+        penetration_width = overlayed_line(body_a.position.x, body_a.size[0],
+                                         body_b.position.x, body_b.size[0])
+
+        penetration_height = overlayed_line(body_a.position.y, body_a.size[1],
+                                          body_b.position.y, body_b.size[1])
+
+        return (penetration_width, penetration_height)
+    
+    # Correct position and Return normal vector
+    def correct_position(self,
+                         body_a: RigidBody,
+                         body_b: RigidBody,
+                         penetration: tuple[float, float]) -> Vector2:
+        relative_velocity = body_a.velocity - body_b.velocity
+
+        dt = float("inf")
+        angle = 0
+        if relative_velocity.x != 0:
+            cand = penetration[0] / abs(relative_velocity.x)
+            if dt > cand:
+                dt = cand
+                angle = 0
+
+        if relative_velocity.y != 0:
+            cand = penetration[1] / abs(relative_velocity.y)
+            if dt > cand:
+                dt = cand
+                angle = 90
+
+        body_a.position -= body_a.velocity * dt
+        body_b.position -= body_b.velocity * dt
+
+        ret = Vector2(1, 0)
+        ret.rotate_ip(angle)
+
+        return ret
+
+    def collision_handling(self,
+                           body_a: RigidBody,
+                           body_b: RigidBody,
+                           normal: Vector2,
+                           tangent: Vector2):
         pass
 
+    def update(self):
+        for body in self.bodies:
+            body.rigid_update()
 
-class Entity(DirtySprite):
+        for i, body_a in enumerate(self.bodies):
+            for body_b in self.bodies[i+1:]:
+                penetration = self.compute_penetration(body_a, body_b)
+
+                # Did not collided
+                if penetration[0] <= 0 or penetration[1] <= 0:
+                    continue
+
+                normal = self.correct_position(body_a, body_b, penetration)
+                tangent = normal.rotate(90)
+
+                self.collision_handling(body_a, body_b, normal, tangent)
+
+
+class Entity(pygame.sprite.DirtySprite):
 
     # Both pos and size are meters
     def __init__(self,
@@ -314,7 +404,7 @@ class PlayScene(SceneBase):
 
         self.play_sprites = pygame.sprite.Group()
 
-        self.play_sprites.add(Block(self.play_sprites, (3, 3), (5, 0), 1, "red"))
+        self.play_sprites.add(Block(self.play_sprites, (3, 0), (5, 0), 1, "red"))
         self.play_sprites.add(Block(self.play_sprites, (13, 0), (0, 0), 1, "white"))
         self.play_sprites.add(Border(self.play_sprites, (0, -1), (16, 1)))
         self.play_sprites.add(Border(self.play_sprites, (-1, 0), (1, 8)))
