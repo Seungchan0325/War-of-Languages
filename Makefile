@@ -8,13 +8,13 @@ run: $(VENV)/Scripts/activate
 debug_run: $(VENV)/Scripts/activate
 	$(PYTHON) src/main.py
 
+lint: $(VENV)/Scripts/activate
+	pylint src/
+
 $(VENV)/Scripts/activate: requirements.txt
 	python -m venv $(VENV)
 	$(PYTHON) -m pip install --upgrade pip
 	$(PIP) install -r requirements.txt
-
-lint:
-	pylint src/
 
 clean:
 	rm -rf src/__pycache__

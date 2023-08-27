@@ -1,4 +1,4 @@
-import dataclasses
+from dataclasses import dataclass
 from collections import defaultdict
 
 import pygame
@@ -6,7 +6,7 @@ import pygame
 from common import SingletonInstane
 
 
-@dataclasses.dataclass
+@dataclass
 class MouseEvent:
     is_updated = False
     is_up = defaultdict(bool)
@@ -14,7 +14,7 @@ class MouseEvent:
     is_pressing = defaultdict(bool)
 
 
-@dataclasses.dataclass
+@dataclass
 class KeyEvent:
     is_updated = False
     is_up = defaultdict(bool)
@@ -35,6 +35,7 @@ class EventHandler(SingletonInstane):
         self._mouse_event = MouseEvent()
         self._key_event = KeyEvent()
 
+    # Update events
     def update(self):
         self._mouse_event.is_updated = False
 
@@ -105,3 +106,6 @@ class EventHandler(SingletonInstane):
     @property
     def is_key_pressing(self) -> defaultdict:
         return self._key_event.is_pressing
+
+    def get_mouse_pos(self) -> tuple[int, int]:
+        return pygame.mouse.get_pos()

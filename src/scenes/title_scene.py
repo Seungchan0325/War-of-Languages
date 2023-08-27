@@ -2,7 +2,7 @@ import pygame
 
 from system.control.button import Button
 from system.scenes import SceneBase, Scenes
-from system.screen import Screen, make_rect
+from system.screen import Screen, create_rect
 from system.clock import Timer
 from scenes.common import Title
 from scenes.play_scene import PlayScene
@@ -58,7 +58,7 @@ class PlayButton(TemplateButton):
     def __init__(self):
         screen = Screen.instance()
 
-        rect = make_rect(0, 0.48, 0.28, 0.1)
+        rect = create_rect(0, 0.48, 0.28, 0.1)
         rect.centerx = screen.area.centerx
 
         super().__init__(rect, "{ Play }")
@@ -85,7 +85,7 @@ class SettingsButton(TemplateButton):
     def __init__(self):
         screen = Screen.instance()
 
-        rect = make_rect(0, 0.63, 0.28, 0.1)
+        rect = create_rect(0, 0.63, 0.28, 0.1)
         rect.centerx = screen.area.centerx
 
         super().__init__(rect, "{ Settings }")

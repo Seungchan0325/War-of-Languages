@@ -60,7 +60,7 @@ class Text(pygame.sprite.DirtySprite):
         surface.blit(rendered_text, (0, 0))
 
         return surface
-    
+
     def set_text(self, text: str):
         self.dirty = 1
         self.text = text
@@ -88,7 +88,7 @@ class FPS(pygame.sprite.DirtySprite):
         font = pygame.font.SysFont("arial", 18)
 
         clock = Clock.instance()
-        rendered_text = font.render(f"{1000 // clock.delta()}", True, text_color)
+        rendered_text = font.render(f"{clock.fps(): .2f}", True, text_color)
 
         surface = pygame.Surface(rendered_text.get_size())
 

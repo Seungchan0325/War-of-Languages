@@ -1,19 +1,21 @@
-import abc
+from abc import ABC
 
-import pygame
+from pygame import Rect
+from pygame.sprite import DirtySprite
 
 from system.event_handler import EventHandler
 
 
-class Button(abc.ABC, pygame.sprite.DirtySprite):
+class Button(ABC, DirtySprite):
 
-    def __init__(self, rect: pygame.Rect):
+    def __init__(self, rect: Rect):
         super().__init__()
 
         self.rect = rect
 
     def is_on_mouse(self) -> bool:
-        mouse_pos = pygame.mouse.get_pos()
+        event_handler = EventHandler.instance()
+        mouse_pos = event_handler.get_mouse_pos()
         return self.rect.collidepoint(mouse_pos)
 
     def is_clicked(self, button: int) -> bool:

@@ -1,6 +1,5 @@
 from system.scenes import SceneBase, Scenes
 from system.event_handler import EventHandler
-from system.clock import Timer
 from scenes.common import (
     Title,
 )
