@@ -1,4 +1,4 @@
-from system.scenes import SceneBase, Scenes
+from system.scenes import BaseScene, Scenes
 from system.event_handler import EventHandler
 from scenes.common import (
     Title,
@@ -6,7 +6,7 @@ from scenes.common import (
 from scenes.title_scene import TitleScene
 
 
-class LoadingScene(SceneBase):
+class LoadingScene(BaseScene):
 
     def __init__(self):
         super().__init__()

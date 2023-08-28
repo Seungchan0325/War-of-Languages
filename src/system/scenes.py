@@ -6,7 +6,7 @@ from common import SingletonInstane
 from system.screen import Screen
 
 
-class SceneBase(ABC):
+class BaseScene(ABC):
 
     def __init__(self):
         self.background = pygame.Surface(Screen.instance().area.size)
@@ -21,15 +21,15 @@ class Scenes(SingletonInstane):
 
     def __init__(self):
         self._is_changed: bool
-        self._next_scene: SceneBase
-        self._scene: SceneBase
+        self._next_scene: BaseScene
+        self._scene: BaseScene
 
-    def init(self, scene: SceneBase):
+    def init(self, scene: BaseScene):
         self._is_changed = False
         self._next_scene = None
         self._scene = scene
 
-    def change_scene(self, scene: SceneBase):
+    def change_scene(self, scene: BaseScene):
         self._is_changed = True
         self._next_scene = scene
 

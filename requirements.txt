@@ -1,2 +1,16 @@
+astroid==2.15.6
+cffi==1.15.1
+colorama==0.4.6
+dill==0.3.7
+isort==5.12.0
+lazy-object-proxy==1.9.0
+mccabe==0.7.0
+platformdirs==3.10.0
+pycparser==2.21
 pygame==2.5.1
 pylint==2.17.5
+pymunk==6.5.1
+tomli==2.0.1
+tomlkit==0.12.1
+typing_extensions==4.7.1
+wrapt==1.15.0

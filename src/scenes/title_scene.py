@@ -1,7 +1,7 @@
 import pygame
 
 from system.control.button import Button
-from system.scenes import SceneBase, Scenes
+from system.scenes import BaseScene, Scenes
 from system.screen import Screen, create_rect
 from system.clock import Timer
 from scenes.common import Title
@@ -91,7 +91,7 @@ class SettingsButton(TemplateButton):
         super().__init__(rect, "{ Settings }")
 
 
-class TitleScene(SceneBase):
+class TitleScene(BaseScene):
 
     def __init__(self):
         super().__init__()
