@@ -5,7 +5,7 @@ from system.scenes import BaseScene, Scenes
 from system.screen import Screen, create_rect
 from system.clock import Timer
 from scenes.common import Title
-from scenes.play_scene import PlayScene
+from scenes.selection_scene import SelectionScene
 
 
 class TemplateButton(Button):
@@ -64,20 +64,11 @@ class PlayButton(TemplateButton):
         super().__init__(rect, "{ Play }")
 
     def update(self):
-        if self.is_clicked(pygame.BUTTON_LEFT):
-            self.dirty = 1
-            self._state = 1
-            self.image = self._surfaces[self._state]
-            self._timer.start()
-
         if self._timer.over():
-            self._timer.stop()
-            self.dirty = 1
-            self._state = 0
-            self.image = self._surfaces[self._state]
-
             scenes = Scenes.instance()
-            scenes.change_scene(PlayScene())
+            scenes.change_scene(SelectionScene())
+
+        super().update()
 
 
 class SettingsButton(TemplateButton):

@@ -1,17 +1,17 @@
 import abc
+import math
 
 import pygame
+import pymunk
 from pygame import Rect
 from pygame.sprite import DirtySprite
-import pymunk
 from pymunk import Vec2d
 
-from system.screen import Screen
-from system.scenes import BaseScene
-from system.event_handler import EventHandler
-from system.clock import Clock
 from scenes.common import FPS, Text
-
+from system.clock import Clock
+from system.event_handler import EventHandler
+from system.scenes import BaseScene
+from system.screen import Screen
 
 G = 980.665
 
@@ -60,12 +60,11 @@ class Entity(DirtySprite):
 
         self.body: pymunk.Body = pymunk.Body()
         self.body.position = pos
-        self.body.moment = float("inf")
 
         self.shape = pymunk.Poly(self.body, vs)
         self.shape.mass = 1
-        self.shape.friction = 0
-        self.shape.elasticity = 0.3
+        self.shape.friction = 0.5
+        self.shape.elasticity = 0.5
 
         self.rect: Rect = Rect((0, 0), (coord2pixel(self.size[0]), coord2pixel(self.size[1])))
         self.rect.bottomleft = coord2pixel_pos(self.body.position)
@@ -74,6 +73,8 @@ class Entity(DirtySprite):
         surface.fill("purple")
 
         self.image = surface
+
+        self.body.center_of_gravity = Vec2d(width/2, height/2)
 
     def apply_force(self, force: tuple[int, int]):
         self.body.apply_force_at_local_point(force, self.body.center_of_gravity)
@@ -118,7 +119,7 @@ class MyInput(BaseInput):
 class MyCharacter(Entity):
 
     def __init__(self, my_input: BaseInput):
-        super().__init__((100, 100), (100, 100))
+        super().__init__((0, 0), (50, 50))
         self.input = my_input
 
     def update(self):
@@ -127,11 +128,11 @@ class MyCharacter(Entity):
         if self.input.jump():
             self.apply_impulse((0, 500))
 
-        if self.input.left():
-            self.apply_force((-500, 0))
+        if abs(self.body.velocity.x) < 500 and self.input.left():
+            self.apply_force((-700, 0))
 
-        if self.input.right():
-            self.apply_force((500, 0))
+        if abs(self.body.velocity.x) < 500 and self.input.right():
+            self.apply_force((700, 0))
 
 
 class PlayScene(BaseScene):
@@ -144,19 +145,24 @@ class PlayScene(BaseScene):
 
         borders = [
             pymunk.Segment(self._space.static_body, (0, 0), (1600, 0), 1),
+            pymunk.Segment(self._space.static_body, (0, 900), (1600, 900), 1),
             pymunk.Segment(self._space.static_body, (0, 0), (0, 900), 1),
             pymunk.Segment(self._space.static_body, (1600, 0), (1600, 900), 1),
         ]
 
         for border in borders:
-            border.friction = 0.4
+            border.friction = 1
             border.elasticity = 0.5
 
         self._space.add(*borders)
 
-        entity = MyCharacter(MyInput())
+        self.register_entity(MyCharacter(MyInput()))
+
+    def register_entity(self, entity: Entity):
         self._space.add(entity.body, entity.shape)
+        entity.body.moment = math.inf
         self.sprites.add(entity)
+
 
     def update(self):
         clock = Clock.instance()

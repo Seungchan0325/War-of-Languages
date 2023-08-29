@@ -12,6 +12,7 @@ class MouseEvent:
     is_up = defaultdict(bool)
     is_down = defaultdict(bool)
     is_pressing = defaultdict(bool)
+    scroll = 0.0
 
 
 @dataclass
@@ -42,6 +43,8 @@ class EventHandler(SingletonInstane):
         self._mouse_event.is_up.clear()
         self._mouse_event.is_down.clear()
 
+        self._mouse_event.scroll = 0
+
         self._key_event.is_updated = False
 
         self._key_event.is_up.clear()
@@ -60,6 +63,9 @@ class EventHandler(SingletonInstane):
                 self._mouse_event.is_updated = True
                 self._mouse_event.is_down[event.button] = True
                 self._mouse_event.is_pressing[event.button] = True
+
+            elif event.type == pygame.MOUSEWHEEL:
+                self._mouse_event.scroll = event.y
 
             elif event.type == pygame.KEYUP:
                 self._key_event.is_updated = True
@@ -90,6 +96,10 @@ class EventHandler(SingletonInstane):
     @property
     def is_mouse_pressing(self) -> defaultdict:
         return self._mouse_event.is_pressing
+
+    @property
+    def mouse_scroll(self) -> float:
+        return self._mouse_event.scroll
 
     @property
     def is_key_updated(self) -> bool:

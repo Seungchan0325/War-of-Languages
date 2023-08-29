@@ -63,3 +63,14 @@ def create_rect(x_ratio: float,
     h = screen.height * h_ratio
 
     return pygame.Rect(x, y, w, h)
+
+
+class RatioRect:
+    def __init__(self, x: float, y: float, w: float, h: float):
+        self.x: float = x
+        self.y: float = y
+        self.w: float = w
+        self.h: float = h
+
+    def to_pyrect(self) -> pygame.Rect:
+        return create_rect(self.x, self.y, self.w, self.h)
