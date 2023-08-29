@@ -53,6 +53,7 @@ class ButtonList(DirtySprite):
         self._button_size = button_size
 
         self._draw = False
+        self._is_scrolled = False
 
         self.sprites: Group = Group()
         self.buttons: list[Button] = []
@@ -71,7 +72,6 @@ class ButtonList(DirtySprite):
         self.sprites.add(button)
         self.buttons.append(button)
         self._draw = True
-        self._is_scrolled = False
 
     def update(self):
         event_handler = EventHandler.instance()
