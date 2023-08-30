@@ -14,6 +14,7 @@ class Button(ABC, DirtySprite):
         super().__init__()
 
         self.rect = rect
+        self._prev_on_mouse = self.is_on_mouse()
 
     def update_position(self, ratio_rect: RatioRect):
         self.dirty = 1
@@ -24,6 +25,12 @@ class Button(ABC, DirtySprite):
         mouse_pos = event_handler.get_mouse_pos()
         return self.rect.collidepoint(mouse_pos)
 
+    def mouse_enter(self) -> bool:
+        return not self._prev_on_mouse and self.is_on_mouse()
+
+    def mouse_exit(self) -> bool:
+        return self._prev_on_mouse and not self.is_on_mouse()
+
     def is_clicked(self, button: int) -> bool:
         event_handler = EventHandler.instance()
         mouse_down = event_handler.is_mouse_down[button]
@@ -33,6 +40,9 @@ class Button(ABC, DirtySprite):
         event_handler = EventHandler.instance()
         mouse_down = event_handler.is_mouse_up[button]
         return mouse_down and self.is_on_mouse()
+
+    def update(self):
+        self._prev_on_mouse = self.is_on_mouse()
 
 
 class ButtonList(DirtySprite):
@@ -47,6 +57,7 @@ class ButtonList(DirtySprite):
         self.rect: Rect = self.area.to_pyrect()
 
         surface = pygame.Surface(self.rect.size)
+        surface.fill("gray")
         self.image = surface
 
         self._scroll_cnt = 0
@@ -98,7 +109,7 @@ class ButtonList(DirtySprite):
         if self._draw:
             self.dirty = 1
             surface = pygame.Surface(Screen.instance().size)
-            surface.fill("red")
+            surface.fill("gray")
             self.sprites.draw(surface)
             self.image = surface.subsurface(self.area.to_pyrect())
 
