@@ -6,7 +6,15 @@ from system.event_handler import EventHandler
 from system.scenes import BaseScene, Scenes
 from system.control.button import Button, ButtonList
 from system.screen import Screen, RatioRect
+from system.network import Network
 from scenes.play_scene import PlayScene
+
+
+class State:
+    online: int = 0
+    playing: int  = 1
+    offline: int = 2
+    unknown: int = 3
 
 
 def read_csv(file_path: str) -> list[list]:
@@ -41,6 +49,8 @@ class FriendButton(Button):
         self.nickname = nickname
         self.ip = ip
         self.port = port
+        self.addr = (ip, port)
+        self.state = State.unknown
 
         self._surface_on_mouse = pygame.Surface(self.rect.size)
         self._surface_not_on_mouse = pygame.Surface(self.rect.size)
@@ -67,7 +77,28 @@ class FriendButton(Button):
         else:
             self.image = self._surface_not_on_mouse
 
+        network = Network.instance()
+        network.conn(self.addr)
+        self._is_sent = False
+
     def update(self):
+        if self.state == State.unknown:
+            network = Network.instance()
+            if network.is_conn(self.addr):
+                if self._is_sent:
+                    data = network.recv_by_addr(self.addr)
+                    if data is not None:
+                        msg = data.decode()
+                        if msg.startswith("state_online"):
+                            self.state = State.online
+                        elif msg.startswith("state_playing"):
+                            self.state = State.playing
+                else:
+                    network.send_by_addr(self.addr, "get_state".encode())
+                    self._is_sent = True
+            elif self.addr in network.refused:
+                self.state = State.offline
+
         if self.mouse_enter():
             self.dirty = 1
             self.image = self._surface_on_mouse
@@ -177,8 +208,20 @@ class SelectionScene(BaseScene):
 
         # friend[0] is field name
         for nickname, ip, port in friends[1:]:
-            button = FriendButton(nickname, ip, port, friend_button_size)
+            button = FriendButton(nickname, ip, int(port), friend_button_size)
             self.friend_list.add_button(button)
 
     def update(self):
+        for i in self.friend_list.buttons:
+            print(i.state, end="")
+        print()
+        network = Network.instance()
+        for sock in network.connection:
+            data = network.recv(sock)
+            if data is None:
+                continue
+            msg = data.decode()
+            if msg.startswith("get_state"):
+                network.send(sock, "state_online".encode())
+                network.close(sock)
         self.sprites.update()

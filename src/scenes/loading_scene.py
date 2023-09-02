@@ -1,5 +1,6 @@
 from system.scenes import BaseScene, Scenes
 from system.event_handler import EventHandler
+from system.network import Network
 from scenes.common import (
     Title,
 )
@@ -12,14 +13,16 @@ class LoadingScene(BaseScene):
         super().__init__()
         self.sprites.add(Title())
 
-        # self._timer = Timer(1000)
-        # self._timer.start()
-
     def update(self):
-        # if self._timer.over():
-        #     self._timer.stop()
-        #     scenes = Scenes.instance()
-        #     scenes.change_scene(TitleScene())
+        network = Network.instance()
+        for sock in network.connection:
+            data = network.recv(sock)
+            if data is None:
+                continue
+            msg = data.decode()
+            if msg.startswith("get_state"):
+                network.send(sock, "state_online".encode())
+                network.close(sock)
 
         event_handler = EventHandler.instance()
         if event_handler.is_key_updated or event_handler.is_mouse_updated:

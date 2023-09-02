@@ -13,6 +13,7 @@ class Network(SingletonInstane):
         self.new_connection: list[socket.socket] = []
         self.refused: list[Network.Addr] = []
         self._connecting: list[socket.socket] = []
+        self._disconn: list[socket.socket] = []
 
         self.connection: list[socket.socket] = []
         self.sockets: dict[Network.Addr, socket.socket] = {}
@@ -88,17 +89,14 @@ class Network(SingletonInstane):
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.setblocking(False)
             errno = sock.connect_ex(addr)
-            print("connect", errno)
 
             if errno == 0:
                 self._add(sock, addr)
                 self._conn_que.remove(addr)
             elif errno == self.EINPROGRESS:
-                print("PROGRESSING")
                 self._conn_que.remove(addr)
                 self._connecting.append(sock)
                 self._potential_writers.append(sock)
-                print(self._potential_writers)
             else:
                 self._conn_que.remove(addr)
                 self.refused.append(addr)
@@ -127,7 +125,6 @@ class Network(SingletonInstane):
                     self.refused.append(sock.getpeername)
                     self._potential_readers.remove(sock)
                     sock.close()
-
                 continue
 
             que = self._output_stream[sock]
@@ -146,6 +143,10 @@ class Network(SingletonInstane):
                     self._input_stream[sock].append(data)
                 else:
                     self.close(sock)
+
+        for sock in self._disconn:
+            self._remove(sock, sock.getpeername())
+            sock.close()
 
     def release(self):
         for sock in self.connection:
@@ -173,9 +174,16 @@ class Network(SingletonInstane):
     def recv_by_addr(self, addr: Addr) -> bytes | None:
         return self.recv(self.sockets[addr])
 
+    def pick(self, sock: socket.socket) -> bytes | None:
+        if not self._input_stream[sock]:
+            return None
+        return self._input_stream[sock][0]
+
+    def pcik(self, addr: Addr) -> bytes | None:
+        self.pick(self.sockets[addr])
+
     def close(self, sock: socket.socket):
-        self._remove(sock, sock.getpeername())
-        sock.close()
+        self._disconn.append(sock)
 
     def close_by_addr(self, addr: Addr):
         self.close(self.sockets[addr])
