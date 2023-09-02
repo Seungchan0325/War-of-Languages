@@ -53,8 +53,17 @@ class Network(SingletonInstane):
             self.ETIMEDOUT = 10060
             # WSAEINTR = 10004
             self.EINTR = 10004
+        elif system == "Darwin":
+            # EINPROGRESS = 36
+            self.EINPROGRESS = 36
+            # ECONNREFUSED = 61
+            self.ECONNREFUSED = 61
+            # ETIMEDOUT = 60
+            self.ETIMEDOUT = 60
+            # EINTR = 4
+            self.EINTR = 4
         else:
-            assert True, "Unknown OS"
+            assert False, "Unknown OS"
 
     def _add(self, sock: socket.socket, addr: Addr):
         self.new_connection.append(sock)
@@ -150,7 +159,8 @@ class Network(SingletonInstane):
 
     def release(self):
         for sock in self.connection:
-            self.close(sock)
+            self._remove(sock, sock.getpeername())
+            sock.close()
 
         self._my_socket.close()
 

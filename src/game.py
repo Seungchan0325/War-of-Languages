@@ -1,3 +1,5 @@
+import socket
+
 import pygame
 
 from common import SingletonInstane
@@ -32,7 +34,7 @@ class Game(SingletonInstane):
         event_handler.init()
         screen.init()
         scenes.init(LoadingScene())
-        network.init(("", config.port))
+        network.init((socket.gethostbyname(socket.gethostname()), config.port))
 
         return True
 
