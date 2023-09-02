@@ -212,9 +212,9 @@ class SelectionScene(BaseScene):
             self.friend_list.add_button(button)
 
     def update(self):
-        for i in self.friend_list.buttons:
-            print(i.state, end="")
-        print()
+        # for i in self.friend_list.buttons:
+        #     print(i.state, end="")
+        # print()
         network = Network.instance()
         for sock in network.connection:
             data = network.recv(sock)

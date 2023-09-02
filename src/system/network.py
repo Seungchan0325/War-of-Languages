@@ -144,6 +144,7 @@ class Network(SingletonInstane):
         for sock in ready_to_read:
             if sock is self._my_socket:
                 client, addr = sock.accept()
+                print("accept")
                 self._add(client, addr)
             else:
                 data = sock.recv(1024)
