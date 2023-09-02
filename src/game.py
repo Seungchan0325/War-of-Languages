@@ -1,6 +1,7 @@
 import pygame
 
 from common import SingletonInstane
+from game_config import GameConfig
 from scenes.loading_scene import LoadingScene
 from system.clock import Clock
 from system.event_handler import EventHandler
@@ -20,6 +21,7 @@ class Game(SingletonInstane):
 
         pygame.init()
 
+        config = GameConfig.instance()
         clock = Clock.instance()
         event_handler = EventHandler.instance()
         scenes = Scenes.instance()
@@ -30,7 +32,7 @@ class Game(SingletonInstane):
         event_handler.init()
         screen.init()
         scenes.init(LoadingScene())
-        network.init()
+        network.init(("", config.port))
 
         return True
 

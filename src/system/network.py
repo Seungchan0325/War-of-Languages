@@ -3,8 +3,10 @@ import select
 import platform
 from collections import deque
 
+from common import SingletonInstane
 
-class Network:
+
+class Network(SingletonInstane):
     Addr = tuple[str, int]
 
     def __init__(self):
@@ -85,16 +87,18 @@ class Network:
         for addr in self._conn_que:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.setblocking(False)
-            sock.settimeout(1)
             errno = sock.connect_ex(addr)
+            print("connect", errno)
 
             if errno == 0:
                 self._add(sock, addr)
                 self._conn_que.remove(addr)
             elif errno == self.EINPROGRESS:
+                print("PROGRESSING")
                 self._conn_que.remove(addr)
                 self._connecting.append(sock)
                 self._potential_writers.append(sock)
+                print(self._potential_writers)
             else:
                 self._conn_que.remove(addr)
                 self.refused.append(addr)
@@ -123,6 +127,8 @@ class Network:
                     self.refused.append(sock.getpeername)
                     self._potential_readers.remove(sock)
                     sock.close()
+
+                continue
 
             que = self._output_stream[sock]
             while que:
