@@ -75,9 +75,9 @@ class FriendButton(Button):
             self.dirty = 1
             self.image = self._surface_not_on_mouse
 
-        # if self.is_up_clicked(pygame.BUTTON_LEFT):
-        #     scenes = Scenes.instance()
-        #     scenes.change_scene(PlayScene())
+        if self.is_up_clicked(pygame.BUTTON_LEFT):
+            scenes = Scenes.instance()
+            scenes.change_scene(PlayScene())
         super().update()
 
 

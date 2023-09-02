@@ -116,6 +116,7 @@ class MyInput(BaseInput):
     def right(self) -> bool:
         return self.event_handler.is_key_pressing[pygame.K_d]
 
+
 class MyCharacter(Entity):
 
     def __init__(self, my_input: BaseInput):

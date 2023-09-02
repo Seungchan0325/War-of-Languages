@@ -6,6 +6,7 @@ from system.clock import Clock
 from system.event_handler import EventHandler
 from system.scenes import Scenes
 from system.screen import Screen
+from system.network import Network
 
 
 class Game(SingletonInstane):
@@ -23,11 +24,13 @@ class Game(SingletonInstane):
         event_handler = EventHandler.instance()
         scenes = Scenes.instance()
         screen = Screen.instance()
+        network = Network.instance()
 
         clock.init()
         event_handler.init()
         screen.init()
         scenes.init(LoadingScene())
+        network.init()
 
         return True
 
@@ -36,6 +39,7 @@ class Game(SingletonInstane):
         clock = Clock.instance()
         event_handler = EventHandler.instance()
         scenes = Scenes.instance()
+        network = Network.instance()
 
         while self._running:
             event_handler.update()
@@ -43,6 +47,8 @@ class Game(SingletonInstane):
 
             scenes.update()
             scenes.render()
+
+            network.update()
 
             clock.tick()
 
