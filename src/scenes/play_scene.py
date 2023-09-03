@@ -7,12 +7,11 @@ from pygame import Rect
 from pygame.sprite import DirtySprite
 from pymunk import Vec2d
 
-from scenes.common import FPS, Text
+from scenes.common import FPS, Text, global_network_handling
 from system.clock import Clock
 from system.event_handler import EventHandler
 from system.scenes import BaseScene
 from system.screen import Screen
-from common import global_network_handling
 
 G = 980.665
 

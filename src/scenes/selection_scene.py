@@ -8,7 +8,7 @@ from system.control.button import Button, ButtonList
 from system.screen import Screen, RatioRect
 from system.network import Network
 from scenes.play_scene import PlayScene
-from common import global_network_handling
+from scenes.common import global_network_handling
 
 
 class State:

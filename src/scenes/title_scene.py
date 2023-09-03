@@ -4,9 +4,8 @@ from system.control.button import Button
 from system.scenes import BaseScene, Scenes
 from system.screen import Screen, create_rect
 from system.clock import Timer
-from scenes.common import Title
+from scenes.common import Title, global_network_handling
 from scenes.selection_scene import SelectionScene
-from common import global_network_handling
 
 
 class TemplateButton(Button):

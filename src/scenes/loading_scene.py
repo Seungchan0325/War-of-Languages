@@ -2,9 +2,9 @@ from system.scenes import BaseScene, Scenes
 from system.event_handler import EventHandler
 from scenes.common import (
     Title,
+    global_network_handling,
 )
 from scenes.title_scene import TitleScene
-from common import global_network_handling
 
 
 class LoadingScene(BaseScene):
