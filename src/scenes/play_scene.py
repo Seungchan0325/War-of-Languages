@@ -12,7 +12,7 @@ from system.clock import Clock
 from system.event_handler import EventHandler
 from system.scenes import BaseScene
 from system.screen import Screen
-from system.network import Network
+from common import global_network_handling
 
 G = 980.665
 
@@ -166,15 +166,7 @@ class PlayScene(BaseScene):
         self.sprites.add(entity)
 
     def update(self):
-        network = Network.instance()
-        for sock in network.connection:
-            data = network.recv(sock)
-            if data is None:
-                continue
-            msg = data.decode()
-            if msg.startswith("get_state"):
-                network.send(sock, "state_playing".encode())
-                network.close(sock)
+        global_network_handling("state_playing")
 
         clock = Clock.instance()
         self._space.step(clock.delta_sec())

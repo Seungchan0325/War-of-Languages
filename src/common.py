@@ -1,3 +1,20 @@
+from system.network import Network
+
+
+def global_network_handling(state: str):
+    network = Network.instance()
+
+    for sock in network.connection:
+        data = network.pick(sock)
+        if data is None:
+            continue
+        msg = data.decode()
+        if msg.startswith("get_state"):
+            network.recv(sock)
+            network.send(sock, state.encode())
+            network.close(sock)
+
+
 class SingletonInstane:
     __instance = None
 

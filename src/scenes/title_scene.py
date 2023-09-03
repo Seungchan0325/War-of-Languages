@@ -6,7 +6,7 @@ from system.screen import Screen, create_rect
 from system.clock import Timer
 from scenes.common import Title
 from scenes.selection_scene import SelectionScene
-from system.network import Network
+from common import global_network_handling
 
 
 class TemplateButton(Button):
@@ -93,14 +93,6 @@ class TitleScene(BaseScene):
         self.sprites.add(SettingsButton())
 
     def update(self):
-        network = Network.instance()
-        for sock in network.connection:
-            data = network.recv(sock)
-            if data is None:
-                continue
-            msg = data.decode()
-            if msg.startswith("get_state"):
-                network.send(sock, "state_online".encode())
-                network.close(sock)
+        global_network_handling("state_online")
 
         self.sprites.update()

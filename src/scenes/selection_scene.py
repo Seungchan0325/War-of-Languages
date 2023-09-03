@@ -8,6 +8,7 @@ from system.control.button import Button, ButtonList
 from system.screen import Screen, RatioRect
 from system.network import Network
 from scenes.play_scene import PlayScene
+from common import global_network_handling
 
 
 class State:
@@ -93,10 +94,13 @@ class FriendButton(Button):
                             self.state = State.online
                         elif msg.startswith("state_playing"):
                             self.state = State.playing
+                        else:
+                            print("unkown state")
                 else:
                     network.send_by_addr(self.addr, "get_state".encode())
                     self._is_sent = True
             elif self.addr in network.refused:
+                print("unkown state")
                 self.state = State.offline
 
         if self.mouse_enter():
@@ -212,16 +216,6 @@ class SelectionScene(BaseScene):
             self.friend_list.add_button(button)
 
     def update(self):
-        # for i in self.friend_list.buttons:
-        #     print(i.state, end="")
-        # print()
-        network = Network.instance()
-        for sock in network.connection:
-            data = network.recv(sock)
-            if data is None:
-                continue
-            msg = data.decode()
-            if msg.startswith("get_state"):
-                network.send(sock, "state_online".encode())
-                network.close(sock)
+        global_network_handling("state_online")
+        
         self.sprites.update()
