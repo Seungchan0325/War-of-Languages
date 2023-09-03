@@ -82,6 +82,10 @@ class Network(SingletonInstane):
         self._input_stream.pop(sock)
         self._output_stream.pop(sock)
 
+    def _fast_close(self, sock: socket.socket, addr: Addr):
+        self._remove(sock, addr)
+        sock.close()
+
     def init(self, addr: Addr):
 
         # init my socket
@@ -93,6 +97,13 @@ class Network(SingletonInstane):
 
     def update(self):
         self.new_connection.clear()
+
+        for sock in self._disconn:
+            if self._output_stream[sock]:
+                continue
+            self._disconn.remove(sock)
+            self._remove(sock, sock.getpeername())
+            sock.close()
 
         for addr in self._conn_que:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -126,19 +137,21 @@ class Network(SingletonInstane):
                 errno = sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
                 if errno == 0:
                     self._connecting.remove(sock)
+                    self._potential_writers.remove(sock)
                     self._add(sock, sock.getpeername())
                 elif errno == self.EINTR:
                     pass
                 else:
                     self._connecting.remove(sock)
                     self.refused.append(sock.getpeername)
-                    self._potential_readers.remove(sock)
+                    self._potential_writers.remove(sock)
                     sock.close()
                 continue
 
             que = self._output_stream[sock]
             while que:
                 data = que.popleft()
+                print("write", data)
                 sock.send(data)
 
         for sock in ready_to_read:
@@ -151,12 +164,11 @@ class Network(SingletonInstane):
 
                 if data:
                     self._input_stream[sock].append(data)
+                    print("recv, ", data)
                 else:
-                    self.close(sock)
-
-        for sock in self._disconn:
-            self._remove(sock, sock.getpeername())
-            sock.close()
+                    print("discon")
+                    self._fast_close(sock, sock.getpeername())
+                    #self.close(sock)
 
     def release(self):
         for sock in self.connection:
