@@ -123,7 +123,7 @@ class FriendButton(Button):
             return State.online
 
         if b"state_playing\0" in data:
-            data.remove(b"state_online\0")
+            data.remove(b"state_playing\0")
             return State.playing
 
         assert False, "Wrong recv"

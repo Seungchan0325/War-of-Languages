@@ -219,12 +219,10 @@ class Network(SingletonInstane):
             data = sock.recv(4096)
 
             # Disconnected
-            if data is None:
+            if not data:
                 addr = sock.getpeername()
                 self._fast_close(sock, addr)
                 continue
-
-            print("recived", data)
 
             input_stream = self._input_stream[sock]
             input_stream.extend(data)
