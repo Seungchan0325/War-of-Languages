@@ -224,12 +224,14 @@ class Network(SingletonInstane):
                 self._fast_close(sock, addr)
                 continue
 
+            print("recived", data)
+
             input_stream = self._input_stream[sock]
             input_stream.extend(data)
 
             while True:
                 sep = input_stream.find(b"\0") + 1
-                if sep == -1:
+                if sep == 0:
                     break
                 self._input_list[sock].append(input_stream[:sep])
                 input_stream = input_stream[sep:]

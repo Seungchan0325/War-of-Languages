@@ -117,12 +117,12 @@ class FriendButton(Button):
 
         if not data:
             return State.unknown
-        
-        if b"state_online" in data:
+
+        if b"state_online\0" in data:
             data.remove(b"state_online")
             return State.online
 
-        if b"state_playing" in data:
+        if b"state_playing\0" in data:
             data.remove(b"state_online")
             return State.playing
 

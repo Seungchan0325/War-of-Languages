@@ -21,8 +21,8 @@ class BaseScene:
             if not data:
                 continue
 
-            if b"get_state" in data:
-                data.remove(b"get_state")
+            if b"get_state\0" in data:
+                data.remove(b"get_state\0")
                 network.send(sock, self.state.encode())
                 network.close(sock)
 
