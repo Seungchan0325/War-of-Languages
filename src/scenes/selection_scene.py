@@ -115,13 +115,15 @@ class FriendButton(Button):
 
         data = network.recv_by_addr(self.addr)
 
-        if data is None:
+        if not data:
             return State.unknown
-
-        msg = data.decode()
-        if msg.startswith("state_online"):
+        
+        if b"state_online" in data:
+            data.remove(b"state_online")
             return State.online
-        if msg.startswith("state_playing"):
+
+        if b"state_playing" in data:
+            data.remove(b"state_online")
             return State.playing
 
         assert False, "Wrong recv"
@@ -248,6 +250,10 @@ class PlayButton(Button):
         return surface
 
     def update(self):
+        if self.mouse_enter() or self.mouse_exit():
+            self.image = self._create_surface()
+            self.dirty = 1
+
         if self.is_up_clicked(pygame.BUTTON_LEFT):
             selected_idx = self._friend_list.selected_idx
             selected = self._friend_list.buttons[selected_idx]

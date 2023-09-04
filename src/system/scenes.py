@@ -1,4 +1,5 @@
-import pygame
+from pygame import Surface
+from pygame.sprite import LayeredDirty
 
 from common import SingletonInstane
 from system.network import Network
@@ -8,20 +9,20 @@ from system.screen import Screen
 class BaseScene:
 
     def __init__(self):
-        self.background = pygame.Surface(Screen.instance().area.size)
-        self.sprites = pygame.sprite.LayeredDirty()
+        self.background = Surface(Screen.instance().area.size)
+        self.sprites = LayeredDirty()
         self.state = "state_online"
 
     def network_handling(self):
         network = Network.instance()
 
         for sock in network.connection:
-            data = network.pick(sock)
-            if data is None:
+            data = network.recv(sock)
+            if not data:
                 continue
-            msg = data.decode()
-            if msg.startswith("get_state"):
-                network.recv(sock)
+
+            if b"get_state" in data:
+                data.remove(b"get_state")
                 network.send(sock, self.state.encode())
                 network.close(sock)
 

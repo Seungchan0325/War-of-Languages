@@ -79,8 +79,10 @@ class Network(SingletonInstane):
         self._potential_errs: list[socket.socket] = []
 
         # I/O stream
-        self._input_stream: dict[socket.socket, deque[bytes]] = {}
+        self._input_stream: dict[socket.socket, bytearray] = {}
         self._output_stream: dict[socket.socket, deque[bytes]] = {}
+
+        self._input_list: dict[socket.socket, list[bytearray]] = {}
 
         self._erros = NetworkErros()
 
@@ -93,8 +95,10 @@ class Network(SingletonInstane):
         self._potential_readers.append(sock)
         self._potential_writers.append(sock)
 
-        self._input_stream[sock] = deque()
+        self._input_stream[sock] = bytearray()
         self._output_stream[sock] = deque()
+
+        self._input_list[sock] = []
 
     def _remove(self, sock: socket.socket, addr: Addr):
         self.connection.remove(sock)
@@ -106,6 +110,8 @@ class Network(SingletonInstane):
 
         self._input_stream.pop(sock)
         self._output_stream.pop(sock)
+
+        self._input_list.pop(sock)
 
     # Close directly.
     def _fast_close(self, sock: socket.socket, addr: Addr):
@@ -167,6 +173,7 @@ class Network(SingletonInstane):
             0,
         )
 
+        # write
         for sock in ready_to_write:
             # Check connecting sockets
             if sock in self._connecting:
@@ -185,7 +192,7 @@ class Network(SingletonInstane):
 
                 # Connection failed
                 else:
-                    self.refused.append(sock.getpeername)
+                    self.refused.append(sock.getpeername())
 
                     self._connecting.remove(sock)
                     self._potential_writers.remove(sock)
@@ -197,9 +204,10 @@ class Network(SingletonInstane):
             # Send data
             que = self._output_stream[sock]
             while que:
-                data = que.popleft()
+                data = que.popleft() + b"\0"
                 sock.send(data)
 
+        # recv
         for sock in ready_to_read:
             # Processing connection requests
             if sock is self._my_socket:
@@ -208,7 +216,7 @@ class Network(SingletonInstane):
                 continue
 
             # Recive data
-            data = sock.recv(1024)
+            data = sock.recv(4096)
 
             # Disconnected
             if data is None:
@@ -216,7 +224,15 @@ class Network(SingletonInstane):
                 self._fast_close(sock, addr)
                 continue
 
-            self._input_stream[sock].append(data)
+            input_stream = self._input_stream[sock]
+            input_stream.extend(data)
+
+            while True:
+                sep = input_stream.find(b"\0") + 1
+                if sep == -1:
+                    break
+                self._input_list[sock].append(input_stream[sep])
+                input_stream = input_stream[sep:]
 
     def release(self):
         # Close all sockets
@@ -240,25 +256,12 @@ class Network(SingletonInstane):
         sock = self.sockets[addr]
         self.send(sock, data)
 
-    def recv(self, sock: socket.socket) -> bytes | None:
-        input_stream = self._input_stream[sock]
-        if input_stream:
-            return input_stream.popleft()
-        return None
+    def recv(self, sock: socket.socket) -> list[bytearray]:
+        return self._input_list[sock]
 
-    def recv_by_addr(self, addr: Addr) -> bytes | None:
+    def recv_by_addr(self, addr: Addr) -> list[bytearray]:
         sock = self.sockets[addr]
         return self.recv(sock)
-
-    def pick(self, sock: socket.socket) -> bytes | None:
-        input_stream = self._input_stream[sock]
-        if input_stream:
-            return input_stream[0]
-        return None
-
-    def pcik(self, addr: Addr) -> bytes | None:
-        sock = self.sockets[addr]
-        self.pick(sock)
 
     def close(self, sock: socket.socket):
         self._disconn.append(sock)
