@@ -1,5 +1,5 @@
 import pygame
-from pygame import Surface, Rect
+from pygame import Rect, Surface
 from pygame.sprite import LayeredDirty
 
 from common import SingletonInstane
@@ -13,10 +13,10 @@ class Screen(SingletonInstane):
         self._screen: Surface
 
     def init(self):
+
         # Set the screen size as big as possible
-        self._screen_area = Rect(
-            (0, 0),
-            pygame.display.get_desktop_sizes()[0])
+        size = pygame.display.get_desktop_sizes()[0]
+        self._screen_area = Rect((0, 0), size)
 
         # Set the display and Set the display to full screen
         self._screen = pygame.display.set_mode(
@@ -49,28 +49,3 @@ class Screen(SingletonInstane):
     @property
     def height(self) -> int:
         return self._screen_area.height
-
-
-# Create a rectangle using the ratio to the screen.
-def create_rect(x_ratio: float,
-                y_ratio: float,
-                w_ratio: float,
-                h_ratio: float) -> pygame.Rect:
-    screen = Screen.instance()
-    x = screen.width * x_ratio
-    y = screen.height * y_ratio
-    w = screen.width  * w_ratio
-    h = screen.height * h_ratio
-
-    return pygame.Rect(x, y, w, h)
-
-
-class RatioRect:
-    def __init__(self, x: float, y: float, w: float, h: float):
-        self.x: float = x
-        self.y: float = y
-        self.w: float = w
-        self.h: float = h
-
-    def to_pyrect(self) -> pygame.Rect:
-        return create_rect(self.x, self.y, self.w, self.h)

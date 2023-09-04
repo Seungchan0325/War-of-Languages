@@ -32,6 +32,7 @@ class EventHandler(SingletonInstane):
         self._key_event: KeyEvent
 
     def init(self):
+
         self._is_quit = False
         self._mouse_event = MouseEvent()
         self._key_event = KeyEvent()

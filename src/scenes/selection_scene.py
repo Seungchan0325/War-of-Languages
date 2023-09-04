@@ -1,16 +1,16 @@
+from dataclasses import dataclass
+
 import pygame
-from pygame import Rect
+from pygame import Surface
 
 from game_config import GameConfig
-from system.event_handler import EventHandler
-from system.scenes import BaseScene, Scenes
-from system.control.button import Button, ButtonList
-from system.screen import Screen, RatioRect
-from system.network import Network
+from scenes.common import Button, ButtonList, RatioRect, render_text
 from scenes.play_scene import PlayScene
-from scenes.common import global_network_handling
+from system.network import Network
+from system.scenes import BaseScene, Scenes
 
 
+@dataclass
 class State:
     online: int = 0
     playing: int  = 1
@@ -43,9 +43,7 @@ class FriendButton(Button):
                  ip: str,
                  port: str,
                  rect: RatioRect):
-        super().__init__(rect.to_pyrect())
-
-        self._prev_is_on = self.is_on_mouse()
+        super().__init__(rect)
 
         self.nickname = nickname
         self.ip = ip
@@ -53,66 +51,93 @@ class FriendButton(Button):
         self.addr = (ip, port)
         self.state = State.unknown
 
-        self._surface_on_mouse = pygame.Surface(self.rect.size)
-        self._surface_not_on_mouse = pygame.Surface(self.rect.size)
-
-        self._surface_on_mouse.fill("red")
-        self._surface_not_on_mouse.fill("purple")
-
-        text_color = (255, 255, 255)
-        text_font = pygame.font.SysFont("arial", int(self.rect.height * 0.5))
-
-        rendered_nickname = text_font.render(self.nickname, True, text_color)
-        dest = rendered_nickname.get_rect(
-            left=self._surface_on_mouse.get_rect().left,
-            centery=self._surface_on_mouse.get_rect().centery
-        )
-
-        dest.left += Screen.instance().width * 0.01
-
-        self._surface_on_mouse.blit(rendered_nickname, dest)
-        self._surface_not_on_mouse.blit(rendered_nickname, dest)
-
-        if self.is_on_mouse():
-            self.image = self._surface_on_mouse
-        else:
-            self.image = self._surface_not_on_mouse
-
         network = Network.instance()
         network.conn(self.addr)
         self._is_sent = False
 
+        self.image = self._create_surface()
+
+    def _create_surface(self) -> Surface:
+        # Make Surface
+        surface = Surface(self.rect.size)
+        if self.is_on_mouse():
+            surface.fill("red")
+        else:
+            surface.fill("purple")
+
+        # Make state
+        state_size = (self.rect.height * 0.8, self.rect.height * 0.8)
+        state = Surface(state_size)
+        if self.state == State.online:
+            state.fill("green")
+        elif self.state == State.playing:
+            state.fill("orange")
+        else:
+            state.fill("red")
+
+        dest = state.get_rect(
+            right=surface.get_rect().right,
+            centery=surface.get_rect().centery
+        )
+
+        dest.right -= surface.get_rect().height * 0.2 / 2
+
+        surface.blit(state, dest)
+
+        # Make nickname
+        rendered_nickname = render_text(self.nickname, self.rect.height)
+        dest = rendered_nickname.get_rect(
+            left=surface.get_rect().left,
+            centery=surface.get_rect().centery
+        )
+
+        dest.left += surface.get_rect().width * 0.03
+
+        surface.blit(rendered_nickname, dest)
+
+        return surface
+
+    def _check_state(self):
+        network = Network.instance()
+
+        # Check if is connected
+        if not network.is_conn(self.addr):
+            if self.addr in network.refused:
+                network.refused.remove(self.addr)
+                return State.offline
+            return State.unknown
+
+        # Send query
+        if not self._is_sent:
+            network.send_by_addr(self.addr, "get_state".encode())
+            self._is_sent = True
+            return State.unknown
+
+        data = network.recv_by_addr(self.addr)
+
+        if data is None:
+            return State.unknown
+
+        msg = data.decode()
+        if msg.startswith("state_online"):
+            return State.online
+        if msg.startswith("state_playing"):
+            return State.playing
+
+        assert False, "Wrong recv"
+
     def update(self):
         if self.state == State.unknown:
-            network = Network.instance()
-            if network.is_conn(self.addr):
-                if self._is_sent:
-                    data = network.recv_by_addr(self.addr)
-                    if data is not None:
-                        msg = data.decode()
-                        if msg.startswith("state_online"):
-                            self.state = State.online
-                        elif msg.startswith("state_playing"):
-                            self.state = State.playing
-                        else:
-                            print("unkown state")
-                else:
-                    network.send_by_addr(self.addr, "get_state".encode())
-                    self._is_sent = True
-            elif self.addr in network.refused:
-                print("unkown state")
-                self.state = State.offline
+            state = self._check_state()
+            if self.state != state:
+                self.state = state
+                self.dirty = 1
+                self.image = self._create_surface()
 
-        if self.mouse_enter():
+        if self.mouse_enter() or self.mouse_exit():
             self.dirty = 1
-            self.image = self._surface_on_mouse
-        elif self.mouse_exit():
-            self.dirty = 1
-            self.image = self._surface_not_on_mouse
+            self.image = self._create_surface()
 
-        if self.is_up_clicked(pygame.BUTTON_LEFT):
-            scenes = Scenes.instance()
-            scenes.change_scene(PlayScene())
         super().update()
 
 
@@ -120,16 +145,16 @@ class FriendList(ButtonList):
 
     def __init__(self, button_size: RatioRect):
         super().__init__(RatioRect(0.05, 0.1, 0.4, 0.9), button_size)
-        self._selected_idx = 0
+        self.selected_idx = 0
 
     def update(self):
-        self._selected_idx = -self._scroll_cnt
+        self.selected_idx = -self._scroll_cnt
         for i, button in enumerate(self.buttons):
-            is_in_area = self._scroll_cnt + i > 0
+            is_in_area = button.rect.colliderect(self.rect)
             if is_in_area and button.is_up_clicked(pygame.BUTTON_LEFT):
-                self._is_scrolled = True
-                self._selected_idx = i
+                self.selected_idx = i
                 self._scroll_cnt = -i
+                self._draw = True
 
         super().update()
 
@@ -139,34 +164,37 @@ class MapButton(Button):
     def __init__(self,
                  map_name: str,
                  rect: RatioRect):
-        super().__init__(rect.to_pyrect())
+        super().__init__(rect)
 
-        self._mouse_on_surface = pygame.Surface(self.rect.size)
-        self._mouse_not_on_surface = pygame.Surface(self.rect.size)
-        self._mouse_on_surface.fill("gray")
-        self._mouse_not_on_surface.fill("yellow")
+        self.map_name = map_name
 
-        text_color = (255, 255, 255)
-        text_font = pygame.font.SysFont("arial", int(self.rect.height * 0.5))
-        rendered_text = text_font.render(map_name, True, text_color)
-        dest = rendered_text.get_rect(centerx=self._mouse_on_surface.get_rect().centerx)
-        dest.bottom = self._mouse_on_surface.get_rect().bottom
+        self.image = self._create_surface()
 
-        self._mouse_on_surface.blit(rendered_text, dest)
-        self._mouse_not_on_surface.blit(rendered_text, dest)
 
+    def _create_surface(self) -> Surface:
+        surface = Surface(self.rect.size)
         if self.is_on_mouse():
-            self.image = self._mouse_on_surface
+            surface.fill("gray")
         else:
-            self.image = self._mouse_not_on_surface
+            surface.fill("yellow")
+
+        text = render_text(self.map_name, self.rect.height // 2)
+
+        normal_rect = self.rect.copy()
+        normal_rect.topleft = (0, 0)
+        dest = text.get_rect(
+            centerx=normal_rect.centerx,
+            bottom=normal_rect.bottom,
+        )
+
+        surface.blit(text, dest)
+
+        return surface
 
     def update(self):
-        if self.mouse_enter():
+        if self.mouse_enter() or self.mouse_exit():
             self.dirty = 1
-            self.image = self._mouse_on_surface
-        elif self.mouse_exit():
-            self.dirty = 1
-            self.image = self._mouse_not_on_surface
+            self.image = self._create_surface()
 
         super().update()
 
@@ -175,17 +203,57 @@ class MapList(ButtonList):
 
     def __init__(self, button_size: RatioRect):
         super().__init__(RatioRect(0.55, 0.1, 0.4, 0.9), button_size)
-        self._selected_idx = 0
+        self.selected_idx = 0
 
     def update(self):
-        self._selected_idx = -self._scroll_cnt
+        self.selected_idx = -self._scroll_cnt
         for i, button in enumerate(self.buttons):
-            is_in_area = self._scroll_cnt + i > 0
+            is_in_area = button.rect.colliderect(self.rect)
             if is_in_area and button.is_up_clicked(pygame.BUTTON_LEFT):
-                self._is_scrolled = True
-                self._selected_idx = i
+                self.selected_idx = i
                 self._scroll_cnt = -i
+                self._draw = True
 
+        super().update()
+
+
+class PlayButton(Button):
+
+    def __init__(self, rect: RatioRect,
+                 friend_list: FriendList,
+                 map_list: MapList):
+        super().__init__(rect)
+
+        self._friend_list = friend_list
+        self._map_list = map_list
+
+        self.image = self._create_surface()
+
+    def _create_surface(self):
+        surface = Surface(self.rect.size)
+        if self.is_on_mouse():
+            surface.fill("red")
+        else:
+            surface.fill("purple")
+
+        text = render_text("Play", self.rect.height // 2)
+
+        normal_rect = self.rect.copy()
+        normal_rect.topleft = (0, 0)
+        dest = text.get_rect(
+            center=normal_rect.center
+        )
+
+        surface.blit(text, dest)
+        return surface
+
+    def update(self):
+        if self.is_up_clicked(pygame.BUTTON_LEFT):
+            selected_idx = self._friend_list.selected_idx
+            selected = self._friend_list.buttons[selected_idx]
+            if selected.state == State.online:
+                scenes = Scenes.instance()
+                scenes.change_scene(PlayScene())
         super().update()
 
 
@@ -193,15 +261,6 @@ class SelectionScene(BaseScene):
 
     def __init__(self):
         super().__init__()
-
-        map_button_size = RatioRect(0.55, 0.1, 0.4, 0.4)
-        self.map_list = MapList(map_button_size)
-        self.sprites.add(self.map_list)
-        self.map_list.add_button(MapButton("1", map_button_size))
-        self.map_list.add_button(MapButton("2", map_button_size))
-        self.map_list.add_button(MapButton("3", map_button_size))
-        self.map_list.add_button(MapButton("4", map_button_size))
-        self.map_list.add_button(MapButton("5", map_button_size))
 
         friend_button_size = RatioRect(0, 0, 0.4, 0.05)
         self.friend_list = FriendList(friend_button_size)
@@ -215,7 +274,22 @@ class SelectionScene(BaseScene):
             button = FriendButton(nickname, ip, int(port), friend_button_size)
             self.friend_list.add_button(button)
 
+        map_button_size = RatioRect(0.55, 0.1, 0.4, 0.4)
+        self.map_list = MapList(map_button_size)
+        self.sprites.add(self.map_list)
+        self.map_list.add_button(MapButton("1", map_button_size))
+        self.map_list.add_button(MapButton("2", map_button_size))
+        self.map_list.add_button(MapButton("3", map_button_size))
+        self.map_list.add_button(MapButton("4", map_button_size))
+        self.map_list.add_button(MapButton("5", map_button_size))
+
+        play_button_size = RatioRect(0, 0.1, 0.1, 0.1)
+        play_button_size.centerx = 0.5
+        self.sprites.add(PlayButton(play_button_size,
+                                    self.friend_list,
+                                    self.map_list))
+
     def update(self):
-        global_network_handling("state_online")
-        
+        super().update()
+
         self.sprites.update()

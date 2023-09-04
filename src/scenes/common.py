@@ -1,117 +1,277 @@
+import platform
+
 import pygame
+from pygame import Rect, Surface
+from pygame.sprite import DirtySprite, Group
 
 from game_config import GameConfig
-from system.screen import Screen
 from system.clock import Clock
-from system.network import Network
+from system.event_handler import EventHandler
+from system.screen import Screen
 
 
-def global_network_handling(state: str):
-    network = Network.instance()
-
-    for sock in network.connection:
-        data = network.pick(sock)
-        if data is None:
-            continue
-        msg = data.decode()
-        if msg.startswith("get_state"):
-            network.recv(sock)
-            network.send(sock, state.encode())
-            network.close(sock)
+def px_to_pt(px: int) -> int:
+    pt = 0
+    if platform.system() == "Windows":
+        # Convert px to pt
+        pt = round(px * 72 / 96)
+    else:
+        pt = px
+    return pt
 
 
-class Title(pygame.sprite.DirtySprite):
+def render_text(text: str, px: int) -> Surface:
+    pt = px_to_pt(px)
+    font_name = GameConfig.instance().font
+    font = pygame.font.SysFont(font_name, pt)
+    return font.render(text, True, "white")
 
-    def __init__(self):
-        super().__init__()
 
+class RatioCoord:
+
+    def __init__(self, x: float, y: float):
+        self.x = x
+        self.y = y
+
+    def __getitem__(self, index: int) -> float:
+        if index == 0:
+            return self.x
+        if index == 1:
+            return self.y
+        assert False, "Invalied index"
+
+    def to_tuple(self) -> tuple[float, float]:
+        return (self.x, self.y)
+
+
+class RatioRect:
+    def __init__(self, x: float, y: float, w: float, h: float):
+        self.x: float = x
+        self.y: float = y
+        self.w: float = w
+        self.h: float = h
+
+    def to_pyrect(self) -> Rect:
         screen = Screen.instance()
+        x = screen.width * self.x
+        y = screen.height * self.y
+        w = screen.width  * self.w
+        h = screen.height * self.h
+        return Rect(x, y, w, h)
 
-        width = screen.width * 0.85
-        height = screen.height * 0.23
-        self.rect = pygame.Rect((0, 0), (width, height))
-        self.rect.centerx = screen.area.centerx
-        self.rect.top = screen.height * 0.16
+    @property
+    def centerx(self) -> float:
+        return self.x + self.w / 2
 
-        config = GameConfig.instance()
+    @centerx.setter
+    def centerx(self, value: float):
+        self.x = value - self.w / 2
 
-        text_color = (255, 255, 255)
-        text_font = pygame.font.SysFont("arial", int(self.rect.height * 0.8))
-        rendered_text = text_font.render(config.name, True, text_color)
+    @property
+    def centery(self) -> float:
+        return self.y + self.h / 2
 
-        surface = pygame.Surface(self.rect.size)
-        surface.fill("purple")
+    @centery.setter
+    def centery(self, value: float):
+        self.x = value - self.h / 2
 
-        dest = rendered_text.get_rect(center=surface.get_rect().center)
-        surface.blit(rendered_text, dest)
+    @property
+    def center(self) -> RatioCoord:
+        return (self.centerx, self.centery)
 
-        self.image = surface
+    @center.setter
+    def center(self, value: RatioCoord):
+        self.centerx = value[0]
+        self.centery = value[1]
 
-    def update(self):
-        pass
 
+class Text(DirtySprite):
 
-class Text(pygame.sprite.DirtySprite):
-
-    def __init__(self, text: str):
+    def __init__(self,
+                 text: str,
+                 rect: RatioRect,
+                 fit_width: bool = True):
         super().__init__()
-
-        self.dirty = 1
 
         self.text = text
-        surface = self._make_surface()
-        self.rect = pygame.Rect((0, 0), surface.get_size())
+        self.fit_width = fit_width
 
-        self.image = self._make_surface()
+        self.rect = rect.to_pyrect()
 
-    def _make_surface(self) -> pygame.Surface:
-        text_color = (255, 255, 255)
-        font = pygame.font.SysFont("arial", 18)
+        self.dirty = 1
+        self.image = self._create_surface()
 
-        rendered_text = font.render(f"{self.text}", True, text_color)
+    def _create_surface(self) -> pygame.Surface:
+        rendered_text = render_text(self.text, self.rect.height)
 
-        surface = pygame.Surface(rendered_text.get_size())
+        if self.fit_width:
+            self.rect.width = rendered_text.get_rect().width
 
-        surface.blit(rendered_text, (0, 0))
+        surface = pygame.Surface(self.rect.size)
+
+        # TO REMOVE
+        surface.fill("purple")
+
+        normal_rect = self.rect.copy()
+        normal_rect.topleft = (0, 0)
+        dest = rendered_text.get_rect(
+            center=normal_rect.center
+        )
+
+        surface.blit(rendered_text, dest)
 
         return surface
 
     def set_text(self, text: str):
         self.dirty = 1
         self.text = text
-
-    def update(self):
-        surface = self._make_surface()
-        self.rect = pygame.Rect((0, 0), surface.get_size())
-        self.image = self._make_surface()
+        self.image = self._create_surface()
 
 
-class FPS(pygame.sprite.DirtySprite):
+class Title(Text):
 
     def __init__(self):
-        super().__init__()
+        name = GameConfig.instance().name
 
-        self.dirty = 2
+        rect = RatioRect(0, 0.16, 0.85, 0.15)
+        rect.centerx = 0.5
 
-        surface = self._make_surface()
-        self.rect = pygame.Rect((0, 0), surface.get_size())
+        super().__init__(name, rect, False)
 
-        self.image = self._make_surface()
 
-    def _make_surface(self) -> pygame.Surface:
-        text_color = (255, 255, 255)
-        font = pygame.font.SysFont("arial", 18)
+class FPS(Text):
 
+    def __init__(self, rect: RatioRect):
+        text = self._get_text()
+        super().__init__(text, rect, False)
+
+    def _get_text(self) -> str:
         clock = Clock.instance()
-        rendered_text = font.render(f"{clock.fps(): .2f}", True, text_color)
-
-        surface = pygame.Surface(rendered_text.get_size())
-
-        surface.blit(rendered_text, (0, 0))
-
-        return surface
+        fps = clock.fps()
+        text = f"{fps: .2f}"
+        return text
 
     def update(self):
-        surface = self._make_surface()
-        self.rect = pygame.Rect((0, 0), surface.get_size())
-        self.image = self._make_surface()
+        text = self._get_text()
+        self.set_text(text)
+
+
+class Button(DirtySprite):
+
+    def __init__(self, rect: RatioRect):
+        super().__init__()
+
+        self._event_handler = EventHandler.instance()
+
+        self.rect = rect.to_pyrect()
+        self._prev_on_mouse = self.is_on_mouse()
+
+    def update_position(self, ratio_rect: RatioRect):
+        if self.rect == ratio_rect.to_pyrect():
+            return
+        self.dirty = 1
+        self.rect = ratio_rect.to_pyrect()
+
+    def is_on_mouse(self) -> bool:
+        mouse_pos = self._event_handler.get_mouse_pos()
+        return self.rect.collidepoint(mouse_pos)
+
+    def mouse_enter(self) -> bool:
+        return not self._prev_on_mouse and self.is_on_mouse()
+
+    def mouse_exit(self) -> bool:
+        return self._prev_on_mouse and not self.is_on_mouse()
+
+    def is_clicked(self, button: int) -> bool:
+        mouse_down = self._event_handler.is_mouse_down[button]
+        return mouse_down and self.is_on_mouse()
+
+    def is_up_clicked(self, button: int) -> bool:
+        mouse_down = self._event_handler.is_mouse_up[button]
+        return mouse_down and self.is_on_mouse()
+
+    def update(self):
+        self._prev_on_mouse = self.is_on_mouse()
+
+
+class ButtonList(DirtySprite):
+
+    def __init__(self,
+                 area: RatioRect,
+                 button_size: RatioRect):
+        super().__init__()
+
+        self.sprites: Group = Group()
+        self.buttons: list[Button] = []
+
+        self.area: RatioRect = area
+        self.rect: Rect = self.area.to_pyrect()
+
+        self._bg = Surface(Screen.instance().size)
+        self._bg.fill("gray")
+
+        surface = self._bg.subsurface(self.rect)
+        self.image = surface
+
+        self._scroll_cnt = 0
+        self._button_size = button_size
+
+        self._draw = False
+
+    def _compute_position(self, index: int) -> RatioRect:
+        x = self.area.x
+        y = (index + self._scroll_cnt) * self._button_size.h + self.area.y
+        w = self._button_size.w
+        h = self._button_size.h
+        return RatioRect(x, y, w, h)
+
+    def add_button(self, button: Button):
+        idx = len(self.buttons)
+        pos = self._compute_position(idx)
+        button.update_position(pos)
+
+        self.sprites.add(button)
+        self.buttons.append(button)
+
+        self._draw = True
+
+    def update_position(self):
+        for i, button in enumerate(self.buttons):
+            pos = self._compute_position(i)
+            button.update_position(pos)
+
+    def update(self):
+        event_handler = EventHandler.instance()
+
+        # Scroll
+        if self.rect.collidepoint(event_handler.get_mouse_pos()):
+            max_cnt = 0
+            min_cnt = 1 - len(self.buttons)
+            if event_handler.mouse_scroll < 0 and min_cnt < self._scroll_cnt:
+                self._scroll_cnt -= 1
+                self._draw = True
+            elif event_handler.mouse_scroll > 0 and self._scroll_cnt < max_cnt:
+                self._draw = True
+                self._scroll_cnt += 1
+
+        if self._draw:
+            self.update_position()
+
+        self.sprites.update()
+
+        # Check if It need to draw
+        for sprite in self.sprites:
+            if sprite.dirty > 0:
+                self._draw = True
+                break
+
+        if self._draw:
+            self.dirty = 1
+
+            surface = self._bg.copy()
+            self.sprites.draw(surface)
+            surface = surface.subsurface(self.rect)
+
+            self.image = surface
+
+        self._draw = False

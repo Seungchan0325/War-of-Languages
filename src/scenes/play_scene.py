@@ -7,7 +7,7 @@ from pygame import Rect
 from pygame.sprite import DirtySprite
 from pymunk import Vec2d
 
-from scenes.common import FPS, Text, global_network_handling
+from scenes.common import FPS, RatioRect
 from system.clock import Clock
 from system.event_handler import EventHandler
 from system.scenes import BaseScene
@@ -129,10 +129,10 @@ class MyCharacter(Entity):
         if self.input.jump():
             self.apply_impulse((0, 500))
 
-        if abs(self.body.velocity.x) < 500 and self.input.left():
+        if -500 < self.body.velocity.x and self.input.left():
             self.apply_force((-700, 0))
 
-        if abs(self.body.velocity.x) < 500 and self.input.right():
+        if self.body.velocity.x < 500 and self.input.right():
             self.apply_force((700, 0))
 
 
@@ -140,6 +140,8 @@ class PlayScene(BaseScene):
 
     def __init__(self):
         super().__init__()
+
+        self.state = "state_playing"
 
         self._space = pymunk.Space()
         self._space.gravity = (0, -G)
@@ -159,13 +161,15 @@ class PlayScene(BaseScene):
 
         self.register_entity(MyCharacter(MyInput()))
 
+        self.sprites.add(FPS(RatioRect(0, 0, 0.04, 0.03)))
+
     def register_entity(self, entity: Entity):
         self._space.add(entity.body, entity.shape)
         entity.body.moment = math.inf
         self.sprites.add(entity)
 
     def update(self):
-        global_network_handling("state_playing")
+        super().update()
 
         clock = Clock.instance()
         self._space.step(clock.delta_sec())

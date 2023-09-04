@@ -1,70 +1,59 @@
 import pygame
+from pygame import Surface
 
-from system.control.button import Button
-from system.scenes import BaseScene, Scenes
-from system.screen import Screen, create_rect
-from system.clock import Timer
-from scenes.common import Title, global_network_handling
+from scenes.common import Button, RatioRect, Title, render_text
 from scenes.selection_scene import SelectionScene
+from system.scenes import BaseScene, Scenes
 
 
 class TemplateButton(Button):
 
-    def __init__(self, rect: pygame.Rect, text: str):
+    def __init__(self, rect: RatioRect, text: str):
         super().__init__(rect)
 
         self.dirty = 1
 
-        text_color = (255, 255, 255)
-        text_font = pygame.font.SysFont("arial", int(self.rect.height * 0.43))
-        self.rendered_text = text_font.render(text, True, text_color)
+        self.text = text
 
-        self._state = False
+        self.image = self._create_surface()
 
-        surface1 = pygame.Surface(self.rect.size)
-        surface1.fill("purple")
+    def _create_surface(self) -> Surface:
+        surface = Surface(self.rect.size)
+        if self.is_on_mouse():
+            surface.fill("red")
+        else:
+            surface.fill("purple")
 
-        dest = self.rendered_text.get_rect(center=surface1.get_rect().center)
-        surface1.blit(self.rendered_text, dest)
+        rendered_text = render_text(self.text, self.rect.height)
 
-        surface2 = pygame.Surface(self.rect.size)
-        surface2.fill("red")
+        normal_rect = self.rect.copy()
+        normal_rect.topleft = (0, 0)
+        dest = rendered_text.get_rect(
+            center=normal_rect.center
+        )
+        surface.blit(rendered_text, dest)
 
-        dest = self.rendered_text.get_rect(center=surface2.get_rect().center)
-        surface2.blit(self.rendered_text, dest)
+        return surface
 
-        self._surfaces = [surface1, surface2]
-
-        self.image = self._surfaces[self._state]
-
-        self._timer = Timer(500)
 
     def update(self):
-        if self.is_clicked(pygame.BUTTON_LEFT):
+        if self.mouse_enter() or self.mouse_exit():
             self.dirty = 1
-            self._state = 1
-            self.image = self._surfaces[self._state]
-            self._timer.start()
+            self.image = self._create_surface()
 
-        if self._timer.over():
-            self._timer.stop()
-            self.dirty = 1
-            self._state = 0
-            self.image = self._surfaces[self._state]
+        super().update()
 
 
 class PlayButton(TemplateButton):
 
     def __init__(self):
-        screen = Screen.instance()
-
-        rect = create_rect(0, 0.48, 0.28, 0.1)
-        rect.centerx = screen.area.centerx
+        rect = RatioRect(0, 0.48, 0.28, 0.1)
+        rect.centerx = 0.5
 
         super().__init__(rect, "{ Play }")
 
     def update(self):
-        if self._timer.over():
+        if self.is_up_clicked(pygame.BUTTON_LEFT):
             scenes = Scenes.instance()
             scenes.change_scene(SelectionScene())
 
@@ -74,10 +63,9 @@ class PlayButton(TemplateButton):
 class SettingsButton(TemplateButton):
 
     def __init__(self):
-        screen = Screen.instance()
 
-        rect = create_rect(0, 0.63, 0.28, 0.1)
-        rect.centerx = screen.area.centerx
+        rect = RatioRect(0, 0.63, 0.28, 0.1)
+        rect.centerx = 0.5
 
         super().__init__(rect, "{ Settings }")
 
@@ -92,6 +80,6 @@ class TitleScene(BaseScene):
         self.sprites.add(SettingsButton())
 
     def update(self):
-        global_network_handling("state_online")
+        super().update()
 
         self.sprites.update()
