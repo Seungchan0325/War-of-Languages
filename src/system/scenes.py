@@ -1,3 +1,5 @@
+from enum import Enum, auto
+
 from pygame import Surface
 from pygame.sprite import LayeredDirty
 
@@ -6,12 +8,31 @@ from system.network import Network
 from system.screen import Screen
 
 
+STATE_QUERY = b"get_state"
+
+
+class State(Enum):
+    ONLINE = 0
+    PLAYING = 1
+    OFFLINE = 2
+    UNKNOWN = 3
+
+    @property
+    def state(self) -> bytes:
+        return [
+            b"state_online",
+            b"state_playing",
+            b"state_offline",
+            b"state_unknown",
+        ][self.value]
+
+
 class BaseScene:
 
     def __init__(self):
         self.background = Surface(Screen.instance().area.size)
         self.sprites = LayeredDirty()
-        self.state = "state_online"
+        self.state: State = State.ONLINE
 
     def network_handling(self):
         network = Network.instance()
@@ -21,9 +42,9 @@ class BaseScene:
             if not data:
                 continue
 
-            if b"get_state\0" in data:
-                data.remove(b"get_state\0")
-                network.send(sock, self.state.encode())
+            if STATE_QUERY in data:
+                data.remove(STATE_QUERY)
+                network.send(sock, self.state.state)
                 network.close(sock)
 
     def update(self):

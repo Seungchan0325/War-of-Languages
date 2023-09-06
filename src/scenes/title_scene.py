@@ -24,7 +24,7 @@ class TemplateButton(Button):
         else:
             surface.fill("purple")
 
-        rendered_text = render_text(self.text, self.rect.height)
+        rendered_text = render_text(self.text, int(self.rect.height * 0.5))
 
         normal_rect = self.rect.copy()
         normal_rect.topleft = (0, 0)

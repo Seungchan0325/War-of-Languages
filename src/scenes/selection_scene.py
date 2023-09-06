@@ -7,15 +7,7 @@ from game_config import GameConfig
 from scenes.common import Button, ButtonList, RatioRect, render_text
 from scenes.play_scene import PlayScene
 from system.network import Network
-from system.scenes import BaseScene, Scenes
-
-
-@dataclass
-class State:
-    online: int = 0
-    playing: int  = 1
-    offline: int = 2
-    unknown: int = 3
+from system.scenes import BaseScene, Scenes, State, STATE_QUERY
 
 
 def read_csv(file_path: str) -> list[list]:
@@ -49,7 +41,7 @@ class FriendButton(Button):
         self.ip = ip
         self.port = port
         self.addr = (ip, port)
-        self.state = State.unknown
+        self.state: State = State.UNKNOWN
 
         network = Network.instance()
         network.conn(self.addr)
@@ -68,9 +60,9 @@ class FriendButton(Button):
         # Make state
         state_size = (self.rect.height * 0.8, self.rect.height * 0.8)
         state = Surface(state_size)
-        if self.state == State.online:
+        if self.state == State.ONLINE:
             state.fill("green")
-        elif self.state == State.playing:
+        elif self.state == State.PLAYING:
             state.fill("orange")
         else:
             state.fill("red")
@@ -97,41 +89,41 @@ class FriendButton(Button):
 
         return surface
 
-    def _check_state(self):
+    def _check_state(self) -> State:
         network = Network.instance()
 
         # Check if is connected
         if not network.is_conn(self.addr):
             if self.addr in network.refused:
                 network.refused.remove(self.addr)
-                return State.offline
-            return State.unknown
+                return State.OFFLINE
+            return State.UNKNOWN
 
         # Send query
         if not self._is_sent:
-            network.send_by_addr(self.addr, "get_state".encode())
+            network.send_by_addr(self.addr, STATE_QUERY)
             self._is_sent = True
-            return State.unknown
+            return State.UNKNOWN
 
         data = network.recv_by_addr(self.addr)
 
         if not data:
-            return State.unknown
+            return State.UNKNOWN
 
-        if b"state_online\0" in data:
-            data.remove(b"state_online\0")
-            return State.online
+        if State.ONLINE.state in data:
+            data.remove(State.ONLINE.state)
+            return State.ONLINE
 
-        if b"state_playing\0" in data:
-            data.remove(b"state_playing\0")
-            return State.playing
+        if State.PLAYING.state in data:
+            data.remove(State.PLAYING.state)
+            return State.PLAYING
 
         assert False, "Wrong recv"
 
     def update(self):
-        if self.state == State.unknown:
+        if self.state == State.UNKNOWN:
             state = self._check_state()
-            if self.state != state:
+            if state != State.UNKNOWN:
                 self.state = state
                 self.dirty = 1
                 self.image = self._create_surface()
@@ -257,7 +249,7 @@ class PlayButton(Button):
         if self.is_up_clicked(pygame.BUTTON_LEFT):
             selected_idx = self._friend_list.selected_idx
             selected = self._friend_list.buttons[selected_idx]
-            if selected.state == State.online:
+            if selected.state == State.ONLINE:
                 scenes = Scenes.instance()
                 scenes.change_scene(PlayScene())
         super().update()

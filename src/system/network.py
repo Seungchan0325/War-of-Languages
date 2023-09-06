@@ -228,11 +228,11 @@ class Network(SingletonInstane):
             input_stream.extend(data)
 
             while True:
-                sep = input_stream.find(b"\0") + 1
-                if sep == 0:
+                sep = input_stream.find(b"\0")
+                if sep == -1:
                     break
                 self._input_list[sock].append(input_stream[:sep])
-                input_stream = input_stream[sep:]
+                input_stream = input_stream[sep+1:]
 
     def release(self):
         # Close all sockets
