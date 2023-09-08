@@ -60,6 +60,38 @@ class RatioRect:
         return Rect(x, y, w, h)
 
     @property
+    def left(self) -> float:
+        return self.x
+
+    @left.setter
+    def left(self, value: float):
+        self.x = value
+
+    @property
+    def right(self) -> float:
+        return self.x + self.w
+
+    @right.setter
+    def right(self, value: float):
+        self.x = value - self.w
+
+    @property
+    def top(self) -> float:
+        return self.y
+
+    @top.setter
+    def top(self, value: float):
+        self.y = value
+
+    @property
+    def bottom(self) -> float:
+        return self.y + self.h
+
+    @bottom.setter
+    def bottom(self, value: float):
+        self.y = value - self.h
+
+    @property
     def centerx(self) -> float:
         return self.x + self.w / 2
 

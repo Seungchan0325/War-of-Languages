@@ -38,22 +38,22 @@ class Timer:
     def __init__(self, ms_: int):
         self._ms = ms_
         self._start = 0
-        self._is_activate = False
+        self.is_activate = False
 
     def _time_ms(self) -> int:
         # Convert nanosecond to millisecond
         return time_ns() // NS_TO_MS
 
     def start(self):
-        self._is_activate = True
+        self.is_activate = True
         self._start = self._time_ms()
 
     def stop(self):
-        self._is_activate = False
+        self.is_activate = False
 
     def remain(self):
         delta_time = self._time_ms() - self._start
         return self._ms - delta_time
 
     def over(self) -> bool:
-        return self._is_activate and self.remain() <= 0
+        return self.is_activate and self.remain() <= 0

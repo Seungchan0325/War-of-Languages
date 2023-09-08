@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum
 
 from pygame import Surface
 from pygame.sprite import LayeredDirty
@@ -50,6 +50,9 @@ class BaseScene:
     def update(self):
         self.network_handling()
 
+    def render(self):
+        pass
+
 
 class Scenes(SingletonInstane):
 
@@ -77,5 +80,6 @@ class Scenes(SingletonInstane):
         self._scene.update()
 
     def render(self):
-        screen = Screen.instance()
-        screen.render(self._scene.background, self._scene.sprites)
+        self._scene.render()
+        # screen = Screen.instance()
+        # screen.render(self._scene.background, self._scene.sprites)

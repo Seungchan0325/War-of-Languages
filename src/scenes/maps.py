@@ -5,9 +5,9 @@ import pygame
 from pygame import Rect, Surface
 from pygame.sprite import DirtySprite, Group
 import pymunk
-from pymunk import Body, Poly, Segment, Space
+from pymunk import Body, Poly, Space
 
-from system.clock import Clock
+from system.clock import Clock, Timer
 from system.event_handler import EventHandler
 from system.screen import Screen
 
@@ -29,17 +29,6 @@ height: 9m
  ---------------
 
 """
-
-
-def coord2pixel(coord: float) -> int:
-    screen = Screen.instance()
-    coord_per_pixel = screen.width / 16 / 100
-    return round(coord * coord_per_pixel)
-
-
-def coord2pixel_pos(coord: tuple[float, float]) -> tuple[int, int]:
-    screen = Screen.instance()
-    return (coord2pixel(coord[0]), screen.height - coord2pixel(coord[1]))
 
 
 class Lenght:
@@ -83,12 +72,18 @@ class Coord:
 class CollisionTypes(Enum):
     GROUND = auto()
     PLAYER = auto()
+    BULLET = auto()
 
 
 class Entity(DirtySprite):
 
-    def __init__(self, space: Space, pos: Coord, size: Size):
+    def __init__(self, sprites: Group, space: Space, pos: Coord, size: Size):
         super().__init__()
+
+        self.sprites = sprites
+        self.space = space
+
+        self.sprites.add(self)
 
         self.pos: Coord = pos
         self.size: Size = size
@@ -125,10 +120,16 @@ class Entity(DirtySprite):
     def apply_impulse(self, impulse: tuple[int, int]):
         self.body.apply_impulse_at_local_point(impulse, self.body.center_of_gravity)
 
-    def collision_begin(self, arbiter: pymunk.Arbiter, space: pymunk.Space):
-        pass
+    def collision_begin(self,
+                        arbiter: pymunk.Arbiter,
+                        space: pymunk.Space,
+                        other: "Entity") -> bool:
+        return True
 
-    def collision_end(self, arbiter: pymunk.Arbiter, space: pymunk.Space):
+    def collision_end(self,
+                        arbiter: pymunk.Arbiter,
+                        space: pymunk.Space,
+                        other: "Entity"):
         pass
 
     def update(self):
@@ -139,50 +140,66 @@ class Entity(DirtySprite):
 
 class BaseMap:
 
-    def __init__(self):
+    def __init__(self, sprites: Group):
+        self.sprites: Group = sprites
         self.space = Space()
         self.space.gravity = (0, -G)
 
         width = 1600
         height = 900
+        thickness = 100
 
         borders = [
-            Segment(self.space.static_body, (0, 0), (width, 0), 1),
-            Segment(self.space.static_body, (0, height), (width, height), 1),
-            Segment(self.space.static_body, (0, 0), (0, height), 1),
-            Segment(self.space.static_body, (width, 0), (width, height), 1),
+            Entity(self.sprites, self.space, Coord(0, -thickness), Size(width, thickness)),
+            Entity(self.sprites, self.space, Coord(0, height), Size(width, thickness)),
+            Entity(self.sprites, self.space, Coord(-thickness, 0), Size(thickness, height)),
+            Entity(self.sprites, self.space, Coord(width, 0), Size(thickness, height)),
         ]
 
-        borders[0].friction = 0.8
-        borders[0].elasticity = 0.5
-        borders[0].collision_type = CollisionTypes.GROUND.value
-        for border in borders[1:]:
-            border.friction = 0
-            border.elasticity = 1
+        borders[0].shape.collision_type = CollisionTypes.GROUND.value
+        for border in borders:
+            border.body.body_type = Body.STATIC
+            border.shape.elasticity = 1
+            border.shape.friction = 0
 
-        self.space.add(*borders)
+        def find_entities(shapes: tuple[pymunk.Shape, pymunk.Shape]) -> list[Entity]:
+            ret = []
+            for i in self.sprites:
+                if (hasattr(i, "shape")
+                    and (i.shape is shapes[0]
+                    or i.shape is shapes[1])):
+                    ret.append(i)
 
-        self.sprites: Group = Group()
+            return ret
 
         def default_begin_handler(arbiter: pymunk.Arbiter, space: Space, data) -> bool:
-            for i in self.sprites:
-                if i.shape in arbiter.shapes:
-                    i.collision_begin(arbiter, space)
-            return True
+            entities = find_entities(arbiter.shapes)
+            if len(entities) != 2:
+                return True
+
+            ok = True
+            ok = ok and entities[0].collision_begin(arbiter, space, entities[1])
+            ok = ok and entities[1].collision_begin(arbiter, space, entities[0])
+            return ok
 
         def default_end_handler(arbiter: pymunk.Arbiter, space: Space, data):
-            for i in self.sprites:
-                if i.shape in arbiter.shapes:
-                    i.collision_end(arbiter, space)
+            entities = find_entities(arbiter.shapes)
+            if len(entities) != 2:
+                return
+
+            entities[0].collision_end(arbiter, space, entities[1])
+            entities[1].collision_end(arbiter, space, entities[0])
 
         handler = self.space.add_default_collision_handler()
         handler.begin = default_begin_handler
         handler.separate = default_end_handler
 
+        self.player1: Character
+        self.player2: Character
+
     def update(self):
         clock = Clock.instance()
         self.space.step(clock.delta_sec())
-        self.sprites.update()
 
 
 class BaseInput(abc.ABC):
@@ -199,41 +216,83 @@ class BaseInput(abc.ABC):
     def right(self) -> bool:
         pass
 
+    @abc.abstractmethod
+    def basic_attack(self) -> bool:
+        pass
+
+
+class Bullet(Entity):
+
+    def __init__(self, sprites: Group, space: Space, owner: Entity, pos: Coord, damage: float):
+        super().__init__(sprites, space, pos, Size(10, 10))
+        self.owner = owner
+        self.damage = damage
+
+        self.body.mass = 1
+        self.shape.collision_type = CollisionTypes.BULLET.value
+
+        def zero_gravity(body, gravity, damping, dt):
+            Body.update_velocity(body, (0, 0), damping, dt)
+        self.body.velocity_func = zero_gravity
+
+    def collision_begin(self, arbiter: pymunk.Arbiter, space: Space, other: Entity) -> bool:
+        if other is not self.owner:
+            self.space.remove(self.shape, self.body)
+            self.sprites.remove(self)
+
+        if other.shape.collision_type == CollisionTypes.PLAYER.value:
+            return True
+
+        return False
+
 
 class Character(Entity):
 
-    def __init__(self, space: Space, pos: Coord, my_input: BaseInput):
-        super().__init__(space, pos, Size(50, 50))
+    def __init__(self, sprites: Group, space: Space, pos: Coord, my_input: BaseInput):
+        super().__init__(sprites, space, pos, Size(50, 50))
         self.shape.collision_type = CollisionTypes.PLAYER.value
         self.input = my_input
+
+        self.full_hp = 100
+        self.hp = 100
+
         self.speed = 3000
         self.jump = 1400
         self.limit_speed = 300
+        self.rpm = 400
+
+        self.timer = Timer(1 / (self.rpm / 60) * 1000)
+        self.timer.start()
+
         self.grounded_cnt = 0
+        self.dir = 0
 
-    def collision_begin(self, arbiter: pymunk.Arbiter, space: Space):
-        other = None
-        if arbiter.shapes[0] is self.shape:
-            other = arbiter.shapes[1]
-        elif arbiter.shapes[1] is self.shape:
-            other = arbiter.shapes[0]
+        self._hitted_timer = Timer(300)
+
+    def _create_surface(self) -> Surface:
+        surface = Surface(self.size.to_px())
+
+        if self._hitted_timer.over():
+            surface.fill("purple")
         else:
-            assert False, "Invalied arbiter"
+            surface.fill("red")
 
-        if other.collision_type == CollisionTypes.GROUND.value:
+        return surface
+
+    def collision_begin(self, arbiter: pymunk.Arbiter, space: Space, other: Entity) -> True:
+        if other.shape.collision_type == CollisionTypes.GROUND.value:
             self.grounded_cnt += 1
+
+        if other.shape.collision_type == CollisionTypes.BULLET.value:
+            self.hp -= other.damage
+            self._hitted_timer.start()
+            self.image = self._create_surface()
+            if self.hp <= 0:
+                print("Dead")
         return True
 
-    def collision_end(self, arbiter: pymunk.Arbiter, space: Space):
-        other = None
-        if arbiter.shapes[0] is self.shape:
-            other = arbiter.shapes[1]
-        elif arbiter.shapes[1] is self.shape:
-            other = arbiter.shapes[0]
-        else:
-            assert False, "Invalied arbiter"
-
-        if other.collision_type == CollisionTypes.GROUND.value:
+    def collision_end(self, arbiter: pymunk.Arbiter, space: Space, other: Entity):
+        if other.shape.collision_type == CollisionTypes.GROUND.value:
             self.grounded_cnt -= 1
 
     def update(self):
@@ -244,9 +303,28 @@ class Character(Entity):
 
         if -self.limit_speed < self.body.velocity.x and self.input.left():
             self.apply_force((-self.speed, 0))
+            self.dir = -1
 
         if self.body.velocity.x < self.limit_speed and self.input.right():
             self.apply_force((self.speed, 0))
+            self.dir = 1
+
+        if self.timer.over() and self.input.basic_attack():
+            pos = self.pos
+            if self.dir < 0:
+                pos.x.x -= 10
+            elif self.dir > 0:
+                pos.x.x += 50
+            pos.y.x += 25
+            bullet = Bullet(self.sprites, self.space, self, pos, 1)
+            bullet.apply_impulse((1500 * self.dir, 0))
+
+            self.timer.start()
+
+        if self._hitted_timer.over():
+            self.image = self._create_surface()
+            self._hitted_timer.stop()
+
 
 class MyInput(BaseInput):
 
@@ -261,6 +339,9 @@ class MyInput(BaseInput):
 
     def right(self) -> bool:
         return self.event_handler.is_key_pressing[pygame.K_d]
+
+    def basic_attack(self) -> bool:
+        return self.event_handler.is_key_pressing[pygame.K_s]
 
 
 class EmemyInput(BaseInput):
@@ -277,11 +358,69 @@ class EmemyInput(BaseInput):
     def right(self) -> bool:
         return self.event_handler.is_key_pressing[pygame.K_RIGHT]
 
+    def basic_attack(self) -> bool:
+        return self.event_handler.is_key_pressing[pygame.K_DOWN]
+
+
+class StartMenu(Entity):
+
+    def __init__(self, sprites: Group, space: Space):
+        super().__init__(sprites, space, Coord(0, -1000), Size(500, 1000))
+
+        self.shape.collision_type = CollisionTypes.GROUND.value
+        self.body.body_type = Body.KINEMATIC
+
+        self.timer = Timer(10_000)
+        self.timer.start()
+
+        self.up_timer = Timer(500)
+        self.stop_timer = Timer(1000)
+        self.down_timer = Timer(500)
+
+        self.states = {
+            "stop": 1,
+            "up": 2,
+            "down": 3
+        }
+
+        self.state = self.states["stop"]
+
+        def move(body, gravity, damping, dt):
+            if self.state == self.states["stop"]:
+                body.velocity = (0, 0)
+            elif self.state == self.states["up"]:
+                body.velocity = (0, 1200)
+            elif self.state == self.states["down"]:
+                body.velocity = (0, -1200)
+        self.body.velocity_func = move
+
+    def update(self):
+        super().update()
+
+        if self.timer.over():
+            self.timer.start()
+            self.state = self.states["up"]
+            self.up_timer.start()
+
+        if self.up_timer.over():
+            self.up_timer.stop()
+            self.state = self.states["stop"]
+            self.stop_timer.start()
+
+        if self.stop_timer.over():
+            self.stop_timer.stop()
+            self.state = self.states["down"]
+            self.down_timer.start()
+
+        if self.down_timer.over():
+            self.down_timer.stop()
+            self.state = self.states["stop"]
+            self.body.position = (0, -1000)
 
 class Taskbar(Entity):
 
-    def __init__(self, space: Space):
-        super().__init__(space, Coord(0, 0), Size(1600, 50))
+    def __init__(self, sprites: Group, space: Space):
+        super().__init__(sprites, space, Coord(0, 0), Size(1600, 50))
 
         self.shape.collision_type = CollisionTypes.GROUND.value
         self.body.body_type = Body.STATIC
@@ -289,8 +428,8 @@ class Taskbar(Entity):
 
 class Icon(Entity):
 
-    def __init__(self, space: Space, pos: Coord):
-        super().__init__(space, pos, Size(40, 40))
+    def __init__(self, sprites: Group, space: Space, pos: Coord):
+        super().__init__(sprites, space, pos, Size(40, 40))
 
         self.shape.collision_type = CollisionTypes.GROUND.value
         self.body.body_type = Body.STATIC
@@ -298,13 +437,14 @@ class Icon(Entity):
 
 class WindowsMap(BaseMap):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, sprites: Group):
+        super().__init__(sprites)
 
+        StartMenu(self.sprites, self.space)
+        Taskbar(self.sprites, self.space)
         for i in range(3):
             for j in range(10):
-                self.sprites.add(Icon(self.space, Coord(j * 100 + 330, i * 230 + 100)))
+                Icon(self.sprites, self.space, Coord(j * 100 + 330, i * 230 + 100))
 
-        self.sprites.add(Taskbar(self.space))
-        self.sprites.add(Character(self.space, Coord(0, 100), MyInput()))
-        self.sprites.add(Character(self.space, Coord(1550, 100), EmemyInput()))
+        self.player1 = Character(self.sprites, self.space, Coord(0, 100), MyInput())
+        self.player2 = Character(self.sprites, self.space, Coord(1550, 100), EmemyInput())

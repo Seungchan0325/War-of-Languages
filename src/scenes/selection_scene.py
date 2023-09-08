@@ -8,6 +8,7 @@ from scenes.common import Button, ButtonList, RatioRect, render_text
 from scenes.play_scene import PlayScene
 from system.network import Network
 from system.scenes import BaseScene, Scenes, State, STATE_QUERY
+from system.screen import Screen
 
 
 def read_csv(file_path: str) -> list[list]:
@@ -291,3 +292,7 @@ class SelectionScene(BaseScene):
         super().update()
 
         self.sprites.update()
+
+    def render(self):
+        screen = Screen.instance()
+        screen.render(self.background, self.sprites)

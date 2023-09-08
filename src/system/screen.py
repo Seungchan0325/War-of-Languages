@@ -10,7 +10,7 @@ class Screen(SingletonInstane):
 
     def __init__(self):
         self._screen_area: Rect
-        self._screen: Surface
+        self.screen: Surface
 
     def init(self):
 
@@ -19,7 +19,7 @@ class Screen(SingletonInstane):
         self._screen_area = Rect((0, 0), size)
 
         # Set the display and Set the display to full screen
-        self._screen = pygame.display.set_mode(
+        self.screen = pygame.display.set_mode(
             self._screen_area.size,
             flags=pygame.FULLSCREEN)
 
@@ -31,7 +31,7 @@ class Screen(SingletonInstane):
                background: Surface,
                sprites: LayeredDirty):
         # Draw scene
-        updates = sprites.draw(self._screen, background)
+        updates = sprites.draw(self.screen, background)
         pygame.display.update(updates)
 
     @property

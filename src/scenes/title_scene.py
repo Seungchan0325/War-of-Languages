@@ -4,6 +4,7 @@ from pygame import Surface
 from scenes.common import Button, RatioRect, Title, render_text
 from scenes.selection_scene import SelectionScene
 from system.scenes import BaseScene, Scenes
+from system.screen import Screen
 
 
 class TemplateButton(Button):
@@ -83,3 +84,7 @@ class TitleScene(BaseScene):
         super().update()
 
         self.sprites.update()
+
+    def render(self):
+        screen = Screen.instance()
+        screen.render(self.background, self.sprites)
