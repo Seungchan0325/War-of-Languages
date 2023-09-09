@@ -2,7 +2,6 @@ import pygame
 from pygame import Surface
 
 from scenes.common import Button, RatioRect, Title, render_text
-from scenes.selection_scene import SelectionScene
 from system.scenes import BaseScene, Scenes
 from system.screen import Screen
 
@@ -55,8 +54,9 @@ class PlayButton(TemplateButton):
 
     def update(self):
         if self.is_up_clicked(pygame.BUTTON_LEFT):
+            from scenes.play_scene import PlayScene
             scenes = Scenes.instance()
-            scenes.change_scene(SelectionScene())
+            scenes.change_scene(PlayScene())
 
         super().update()
 
@@ -78,7 +78,7 @@ class TitleScene(BaseScene):
 
         self.sprites.add(Title())
         self.sprites.add(PlayButton())
-        self.sprites.add(SettingsButton())
+        # self.sprites.add(SettingsButton())
 
     def update(self):
         super().update()

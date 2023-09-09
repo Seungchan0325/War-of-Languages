@@ -3,7 +3,7 @@ from pygame.sprite import DirtySprite
 
 from scenes.common import FPS, RatioRect, render_text
 from scenes.maps import WindowsMap, Character
-from system.scenes import BaseScene, State
+from system.scenes import Scenes, BaseScene, State
 from system.screen import Screen
 
 
@@ -77,9 +77,25 @@ class PlayScene(BaseScene):
     def update(self):
         super().update()
 
+        if (self.map.player1.hp <= 0
+            or self.map.player2.hp <= 0):
+            scenes = Scenes.instance()
+
+            winner = ""
+            if self.map.player1.hp <= 0:
+                winner = "Player 2"
+            elif self.map.player2.hp <= 0:
+                winner = "Player 1"
+            else:
+                assert False
+            
+            from scenes.game_over_scene import GameOverScene
+            scenes.change_scene(GameOverScene(winner))
+
         self.map.update()
         self.sprites.update()
 
     def render(self):
+
         screen = Screen.instance()
         screen.render(self.background, self.sprites)

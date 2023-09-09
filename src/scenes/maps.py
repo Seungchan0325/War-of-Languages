@@ -1,4 +1,5 @@
 import abc
+from random import randrange
 from enum import Enum, auto
 
 import pygame
@@ -253,8 +254,8 @@ class Character(Entity):
         self.shape.collision_type = CollisionTypes.PLAYER.value
         self.input = my_input
 
-        self.full_hp = 100
-        self.hp = 100
+        self.full_hp: float = 100
+        self.hp: float = 100
 
         self.speed = 3000
         self.jump = 1400
@@ -287,8 +288,6 @@ class Character(Entity):
             self.hp -= other.damage
             self._hitted_timer.start()
             self.image = self._create_surface()
-            if self.hp <= 0:
-                print("Dead")
         return True
 
     def collision_end(self, arbiter: pymunk.Arbiter, space: Space, other: Entity):
@@ -326,7 +325,7 @@ class Character(Entity):
             self._hitted_timer.stop()
 
 
-class MyInput(BaseInput):
+class P1Input(BaseInput):
 
     def __init__(self):
         self.event_handler = EventHandler.instance()
@@ -344,7 +343,7 @@ class MyInput(BaseInput):
         return self.event_handler.is_key_pressing[pygame.K_s]
 
 
-class EmemyInput(BaseInput):
+class P2Input(BaseInput):
 
     def __init__(self):
         self.event_handler = EventHandler.instance()
@@ -370,7 +369,8 @@ class StartMenu(Entity):
         self.shape.collision_type = CollisionTypes.GROUND.value
         self.body.body_type = Body.KINEMATIC
 
-        self.timer = Timer(10_000)
+        t = randrange(10_000, 30_000)
+        self.timer = Timer(t)
         self.timer.start()
 
         self.up_timer = Timer(500)
@@ -417,6 +417,64 @@ class StartMenu(Entity):
             self.state = self.states["stop"]
             self.body.position = (0, -1000)
 
+
+class Calendar(Entity):
+
+    def __init__(self, sprites: Group, space: Space):
+        super().__init__(sprites, space, Coord(1600, 75), Size(300, 400))
+
+        self.shape.collision_type = CollisionTypes.GROUND.value
+        self.body.body_type = Body.KINEMATIC
+
+        t = randrange(10_000, 30_000)
+        self.timer = Timer(t)
+        self.timer.start()
+
+        self.push_timer = Timer(300)
+        self.stop_timer = Timer(1_000)
+        self.pull_timer = Timer(300)
+
+        self.states = {
+            "stop": 1,
+            "push": 2,
+            "pull": 3
+        }
+
+        self.state = self.states["stop"]
+
+        def move(body, gravity, damping, dt):
+            if self.state == self.states["stop"]:
+                body.velocity = (0, 0)
+            elif self.state == self.states["push"]:
+                body.velocity = (-1000, 0)
+            elif self.state == self.states["pull"]:
+                body.velocity = (1000, 0)
+        self.body.velocity_func = move
+
+    def update(self):
+        super().update()
+
+        if self.timer.over():
+            self.timer.start()
+            self.state = self.states["push"]
+            self.push_timer.start()
+
+        if self.push_timer.over():
+            self.push_timer.stop()
+            self.state = self.states["stop"]
+            self.stop_timer.start()
+
+        if self.stop_timer.over():
+            self.stop_timer.stop()
+            self.state = self.states["pull"]
+            self.pull_timer.start()
+
+        if self.pull_timer.over():
+            self.pull_timer.stop()
+            self.state = self.states["stop"]
+            self.body.position = (1600, 75)
+
+
 class Taskbar(Entity):
 
     def __init__(self, sprites: Group, space: Space):
@@ -441,10 +499,11 @@ class WindowsMap(BaseMap):
         super().__init__(sprites)
 
         StartMenu(self.sprites, self.space)
+        Calendar(self.sprites, self.space)
         Taskbar(self.sprites, self.space)
         for i in range(3):
             for j in range(10):
                 Icon(self.sprites, self.space, Coord(j * 100 + 330, i * 230 + 100))
 
-        self.player1 = Character(self.sprites, self.space, Coord(0, 100), MyInput())
-        self.player2 = Character(self.sprites, self.space, Coord(1550, 100), EmemyInput())
+        self.player1 = Character(self.sprites, self.space, Coord(0, 100), P1Input())
+        self.player2 = Character(self.sprites, self.space, Coord(1550, 100), P2Input())

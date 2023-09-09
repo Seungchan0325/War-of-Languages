@@ -5,7 +5,6 @@ from pygame import Surface
 
 from game_config import GameConfig
 from scenes.common import Button, ButtonList, RatioRect, render_text
-from scenes.play_scene import PlayScene
 from system.network import Network
 from system.scenes import BaseScene, Scenes, State, STATE_QUERY
 from system.screen import Screen
@@ -251,6 +250,7 @@ class PlayButton(Button):
             selected_idx = self._friend_list.selected_idx
             selected = self._friend_list.buttons[selected_idx]
             if selected.state == State.ONLINE:
+                from scenes.play_scene import PlayScene
                 scenes = Scenes.instance()
                 scenes.change_scene(PlayScene())
         super().update()

@@ -105,7 +105,7 @@ class RatioRect:
 
     @centery.setter
     def centery(self, value: float):
-        self.x = value - self.h / 2
+        self.y = value - self.h / 2
 
     @property
     def center(self) -> RatioCoord:
