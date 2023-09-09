@@ -47,6 +47,7 @@ class Game(SingletonInstane):
         scenes = Scenes.instance()
         network = Network.instance()
 
+        # Loop
         while not event_handler.is_quit:
             event_handler.update()
 

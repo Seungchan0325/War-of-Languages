@@ -28,7 +28,7 @@ class Clock(SingletonInstane):
         return self._clock.get_fps()
 
     def delta_sec(self) -> float:
-        # # 파이썬이 구려서 그냥 상수씀 ㅅㄱ
+        # 파이썬이 구려서 그냥 상수씀 ㅅㄱ
         fps = GameConfig.instance().fps
         return 1 / fps
 

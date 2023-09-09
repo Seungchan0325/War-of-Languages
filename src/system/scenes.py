@@ -48,7 +48,8 @@ class BaseScene:
                 network.close(sock)
 
     def update(self):
-        self.network_handling()
+        # self.network_handling()
+        pass
 
     def render(self):
         pass

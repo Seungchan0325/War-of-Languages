@@ -254,8 +254,8 @@ class Character(Entity):
         self.shape.collision_type = CollisionTypes.PLAYER.value
         self.input = my_input
 
-        self.full_hp: float = 100
-        self.hp: float = 100
+        self.full_hp: float = 100.0
+        self.hp: float = 100.0
 
         self.speed = 3000
         self.jump = 1400
