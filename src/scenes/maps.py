@@ -226,13 +226,15 @@ class BaseInput(abc.ABC):
 
 class Bullet(Entity):
 
-    def __init__(self, sprites: Group, space: Space, owner: Entity, pos: Coord, damage: float):
+    def __init__(self, sprites: Group, space: Space, owner: Entity, pos: Coord, damage: float, img: Surface):
         super().__init__(sprites, space, pos, Size(10, 10))
         self.owner = owner
         self.damage = damage
 
         self.body.mass = 1
         self.shape.collision_type = CollisionTypes.BULLET.value
+
+        self.image = img
 
         def zero_gravity(body, gravity, damping, dt):
             Body.update_velocity(body, (0, 0), damping, dt)
@@ -270,20 +272,11 @@ class Character(Entity):
         self.bullet_interval = Timer(1 / (self.rpm / 60) * 1000)
         self.bullet_interval.start()
 
+        self.bullet_img = Surface(self.rect.size)
+
         self._grounded_cnt = 0
         self._dir = 1
 
-        self._hitted_timer = Timer(300)
-
-    def _create_surface(self) -> Surface:
-        surface = Surface(self.size.to_px())
-
-        if self._hitted_timer.over():
-            surface.fill("purple")
-        else:
-            surface.fill("red")
-
-        return surface
 
     def collision_begin(self, arbiter: pymunk.Arbiter, space: Space, other: Entity) -> True:
         if other.shape.collision_type == CollisionTypes.GROUND.value:
@@ -291,8 +284,7 @@ class Character(Entity):
 
         if other.shape.collision_type == CollisionTypes.BULLET.value:
             self.hp -= other.damage
-            self._hitted_timer.start()
-            self.image = self._create_surface()
+
         return True
 
     def collision_end(self, arbiter: pymunk.Arbiter, space: Space, other: Entity):
@@ -320,14 +312,10 @@ class Character(Entity):
             elif self._dir > 0:
                 pos.x.x += 50
             pos.y.x += 25
-            bullet = Bullet(self.sprites, self.space, self, pos, self.bullet_damage)
+            bullet = Bullet(self.sprites, self.space, self, pos, self.bullet_damage, self.bullet_img)
             bullet.apply_impulse((self.bullet_impulse * self._dir, 0))
 
             self.bullet_interval.start()
-
-        if self._hitted_timer.over():
-            self.image = self._create_surface()
-            self._hitted_timer.stop()
 
 
 class CppCharacter(Character):
@@ -340,11 +328,36 @@ class CppCharacter(Character):
         self.hp = 150.0
 
         self.bullet_impulse = 1000
-        self.bullet_damage = 8
+        self.bullet_damage = 7.5
 
         self.rpm = 80
         self.bullet_interval = Timer(1 / (self.rpm / 60) * 1000)
         self.bullet_interval.start()
+
+        self.bullet_img = pygame.image.load("resources/c_bullet.png")
+        self.bullet_img = pygame.transform.scale(self.bullet_img, Size(10, 10).to_px())
+
+        self._hitted_timer = Timer(100)
+
+        self._img = pygame.image.load("resources/c.png").convert_alpha()
+        self._img = pygame.transform.scale(self._img, (self.rect.width, self.rect.height))
+
+        self._img_hitted = pygame.image.load("resources/c_hitted.png").convert_alpha()
+        self._img_hitted = pygame.transform.scale(self._img_hitted, (self.rect.width, self.rect.height))
+        self.image = self._img
+
+    def collision_begin(self, arbiter: pymunk.Arbiter, space: Space, other: Entity) -> True:
+        if other.shape.collision_type == CollisionTypes.BULLET.value:
+            self._hitted_timer.start()
+            self.image = self._img_hitted
+
+        return super().collision_begin(arbiter, space, other)
+
+    def update(self):
+        if self._hitted_timer.over():
+            self._hitted_timer.stop()
+            self.image = self._img
+        super().update()
 
 
 class PythonCharacter(Character):
@@ -361,6 +374,32 @@ class PythonCharacter(Character):
         self.bullet_interval = Timer(1 / (self.rpm / 60) * 1000)
         self.bullet_interval.start()
 
+        self.bullet_img = pygame.image.load("resources/python_bullet.png")
+        self.bullet_img = pygame.transform.scale(self.bullet_img, Size(10, 10).to_px())
+
+        self._hitted_timer = Timer(100)
+
+        self._img = pygame.image.load("resources/python.png").convert_alpha()
+        self._img = pygame.transform.scale(self._img, (self.rect.width, self.rect.height))
+
+        self._img_hitted = pygame.image.load("resources/python_hitted.png").convert_alpha()
+        self._img_hitted = pygame.transform.scale(self._img_hitted, (self.rect.width, self.rect.height))
+
+        self.image = self._img
+
+    def collision_begin(self, arbiter: pymunk.Arbiter, space: Space, other: Entity) -> True:
+        if other.shape.collision_type == CollisionTypes.BULLET.value:
+            self._hitted_timer.start()
+            self.image = self._img_hitted
+
+        return super().collision_begin(arbiter, space, other)
+
+    def update(self):
+        if self._hitted_timer.over():
+            self._hitted_timer.stop()
+            self.image = self._img
+        super().update()
+
 
 class P1Input(BaseInput):
 
@@ -368,7 +407,7 @@ class P1Input(BaseInput):
         self.event_handler = EventHandler.instance()
 
     def jump(self) -> bool:
-        return self.event_handler.is_key_down[pygame.K_SPACE]
+        return self.event_handler.is_key_down[pygame.K_w]
 
     def left(self) -> bool:
         return self.event_handler.is_key_pressing[pygame.K_a]
@@ -406,7 +445,7 @@ class StartMenu(Entity):
         self.shape.collision_type = CollisionTypes.GROUND.value
         self.body.body_type = Body.KINEMATIC
 
-        img = pygame.image.load("resources/startmenu.png")
+        img = pygame.image.load("resources/startmenu.png").convert_alpha()
         img = pygame.transform.scale(img, (self.rect.width, self.rect.height))
         self.image = img
 
@@ -467,7 +506,7 @@ class Calendar(Entity):
         self.shape.collision_type = CollisionTypes.GROUND.value
         self.body.body_type = Body.KINEMATIC
 
-        img = pygame.image.load("resources/calender.png")
+        img = pygame.image.load("resources/calender.png").convert_alpha()
         img = pygame.transform.scale(img, (self.rect.width, self.rect.height))
         self.image = img
 
@@ -528,18 +567,20 @@ class Taskbar(Entity):
         self.shape.collision_type = CollisionTypes.GROUND.value
         self.body.body_type = Body.STATIC
 
-        img = pygame.image.load("resources/taskbar.png")
+        img = pygame.image.load("resources/taskbar.png").convert_alpha()
         img = pygame.transform.scale(img, (self.rect.width, self.rect.height))
         self.image = img
 
 
 class Icon(Entity):
 
-    def __init__(self, sprites: Group, space: Space, pos: Coord):
+    def __init__(self, sprites: Group, space: Space, pos: Coord, img: Surface):
         super().__init__(sprites, space, pos, Size(40, 40))
 
         self.shape.collision_type = CollisionTypes.GROUND.value
         self.body.body_type = Body.STATIC
+
+        self.image = img
 
 
 class WindowsMap(BaseMap):
@@ -547,14 +588,23 @@ class WindowsMap(BaseMap):
     def __init__(self, sprites: Group):
         super().__init__(sprites)
 
-        self.background.fill("#18A8F1")
+        background = pygame.image.load("resources/background.png").convert_alpha()
+        background = pygame.transform.scale(background, Screen.instance().size)
+        self.background = background
 
         StartMenu(self.sprites, self.space)
         Calendar(self.sprites, self.space)
         Taskbar(self.sprites, self.space)
+
+        icons = []
+        for i in range(1, 12):
+            icon = pygame.image.load(f"resources/icon{i:02d}.png").convert_alpha()
+            icons.append(pygame.transform.scale(icon, Size(40, 40).to_px()))
+
         for i in range(3):
             for j in range(10):
-                Icon(self.sprites, self.space, Coord(j * 100 + 330, i * 230 + 100))
+                icon = randrange(0, 11)
+                Icon(self.sprites, self.space, Coord(j * 100 + 330, i * 230 + 100), icons[icon])
 
         self.player1 = CppCharacter(self.sprites, self.space, Coord(0, 100), P1Input())
         self.player2 = PythonCharacter(self.sprites, self.space, Coord(1550, 100), P2Input())

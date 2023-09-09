@@ -1,7 +1,7 @@
 import pygame
 from pygame import Surface
 
-from scenes.common import Button, RatioRect, Title, render_text
+from scenes.common import Button, RatioRect, render_text
 from system.scenes import BaseScene, Scenes
 from system.screen import Screen
 
@@ -20,11 +20,11 @@ class TemplateButton(Button):
     def _create_surface(self) -> Surface:
         surface = Surface(self.rect.size)
         if self.is_on_mouse():
-            surface.fill("red")
+            surface.fill("#3d3d3d")
         else:
-            surface.fill("purple")
+            surface.fill("#9caeb5")
 
-        rendered_text = render_text(self.text, int(self.rect.height * 0.5))
+        rendered_text = render_text(self.text, int(self.rect.height * 0.7))
 
         normal_rect = self.rect.copy()
         normal_rect.topleft = (0, 0)
@@ -47,10 +47,10 @@ class TemplateButton(Button):
 class PlayButton(TemplateButton):
 
     def __init__(self):
-        rect = RatioRect(0, 0.48, 0.28, 0.1)
+        rect = RatioRect(0, 0.6, 0.15, 0.07)
         rect.centerx = 0.5
 
-        super().__init__(rect, "{ Play }")
+        super().__init__(rect, "Play")
 
     def update(self):
         if self.is_up_clicked(pygame.BUTTON_LEFT):
@@ -61,24 +61,16 @@ class PlayButton(TemplateButton):
         super().update()
 
 
-class SettingsButton(TemplateButton):
-
-    def __init__(self):
-
-        rect = RatioRect(0, 0.63, 0.28, 0.1)
-        rect.centerx = 0.5
-
-        super().__init__(rect, "{ Settings }")
-
-
 class TitleScene(BaseScene):
 
     def __init__(self):
         super().__init__()
 
-        self.sprites.add(Title())
+        background = pygame.image.load("resources/start.png")
+        background = pygame.transform.scale(background, Screen.instance().size)
+        self.background = background
+
         self.sprites.add(PlayButton())
-        # self.sprites.add(SettingsButton())
 
     def update(self):
         super().update()

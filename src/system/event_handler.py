@@ -69,6 +69,9 @@ class EventHandler(SingletonInstane):
                 self._mouse_event.scroll = event.y
 
             elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_ESCAPE:
+                    self._is_quit = True
+
                 self._key_event.is_updated = True
                 self._key_event.is_up[event.key] = True
                 self._key_event.is_pressing[event.key] = False

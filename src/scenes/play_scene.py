@@ -72,7 +72,7 @@ class PlayScene(BaseScene):
         hp2rect.top = 0
         self.sprites.add(HPBar(hp2rect, self.map.player2, "right"))
 
-        # self.sprites.add(FPS(RatioRect(0, 0, 0.04, 0.03)))
+        self.sprites.add(FPS(RatioRect(0, 0, 0.04, 0.03)))
 
     def update(self):
         super().update()

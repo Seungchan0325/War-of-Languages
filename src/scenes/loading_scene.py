@@ -1,4 +1,5 @@
-from scenes.common import Title
+import pygame
+
 from system.event_handler import EventHandler
 from system.scenes import BaseScene, Scenes
 from system.screen import Screen
@@ -8,7 +9,10 @@ class LoadingScene(BaseScene):
 
     def __init__(self):
         super().__init__()
-        self.sprites.add(Title())
+
+        background = pygame.image.load("resources/start.png")
+        background = pygame.transform.scale(background, Screen.instance().size)
+        self.background = background
 
     def update(self):
         super().update()
