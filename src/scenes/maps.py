@@ -452,7 +452,7 @@ class StartMenu(Entity):
         img = pygame.transform.scale(img, (self.rect.width, self.rect.height))
         self.image = img
 
-        t = randrange(5_000, 10_000)
+        t = randrange(3_000, 10_000)
         self.timer = Timer(t)
         self.timer.start()
 
@@ -513,7 +513,7 @@ class Calendar(Entity):
         img = pygame.transform.scale(img, (self.rect.width, self.rect.height))
         self.image = img
 
-        t = randrange(5_000, 10_000)
+        t = randrange(3_000, 10_000)
         self.timer = Timer(t)
         self.timer.start()
 
