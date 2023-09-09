@@ -254,7 +254,7 @@ class Bullet(Entity):
 class Character(Entity):
 
     def __init__(self, sprites: Group, space: Space, pos: Coord, my_input: BaseInput):
-        super().__init__(sprites, space, pos, Size(50, 50))
+        super().__init__(sprites, space, pos, Size(60, 60))
         self.shape.collision_type = CollisionTypes.PLAYER.value
         self.input = my_input
 
@@ -311,7 +311,7 @@ class Character(Entity):
                 pos.x.x -= 10
             elif self._dir > 0:
                 pos.x.x += 50
-            pos.y.x += 25
+            pos.y.x += self.size.height.x / 2 - 10
             bullet = Bullet(self.sprites, self.space, self, pos, self.bullet_damage, self.bullet_img)
             bullet.apply_impulse((self.bullet_impulse * self._dir, 0))
 
@@ -607,7 +607,7 @@ class WindowsMap(BaseMap):
         for i in range(3):
             for j in range(10):
                 icon = randrange(0, 11)
-                Icon(self.sprites, self.space, Coord(j * 100 + 330, i * 230 + 100), icons[icon])
+                Icon(self.sprites, self.space, Coord(j * 120 + 250, i * 230 + 120), icons[icon])
 
         self.player1 = CppCharacter(self.sprites, self.space, Coord(0, 100), P1Input())
         self.player2 = PythonCharacter(self.sprites, self.space, Coord(1550, 100), P2Input())
