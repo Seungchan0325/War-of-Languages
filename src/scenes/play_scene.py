@@ -3,7 +3,7 @@ from pygame.sprite import DirtySprite
 
 from scenes.common import FPS, RatioRect, render_text
 from scenes.maps import WindowsMap, Character
-from system.scenes import Scenes, BaseScene, State
+from system.scenes import Scenes, BaseScene
 from system.screen import Screen
 
 
@@ -57,8 +57,6 @@ class PlayScene(BaseScene):
     def __init__(self):
         super().__init__()
 
-        self.state = State.PLAYING
-
         self.map = WindowsMap(self.sprites)
         self.background = self.map.background
 
@@ -72,7 +70,7 @@ class PlayScene(BaseScene):
         hp2rect.top = 0
         self.sprites.add(HPBar(hp2rect, self.map.player2, "right"))
 
-        self.sprites.add(FPS(RatioRect(0, 0, 0.04, 0.03)))
+        # self.sprites.add(FPS(RatioRect(0, 0, 0.04, 0.03)))
 
     def update(self):
         super().update()

@@ -327,10 +327,11 @@ class CppCharacter(Character):
         self.full_hp = 150.0
         self.hp = 150.0
 
-        self.bullet_impulse = 1000
+        self.rpm = 80
+
+        self.bullet_impulse = 2000
         self.bullet_damage = 7.5
 
-        self.rpm = 80
         self.bullet_interval = Timer(1 / (self.rpm / 60) * 1000)
         self.bullet_interval.start()
 
@@ -370,6 +371,8 @@ class PythonCharacter(Character):
         self.hp = 75
 
         self.rpm = 800
+
+        self.bullet_impulse = 1000
         self.bullet_damage = 1.5
         self.bullet_interval = Timer(1 / (self.rpm / 60) * 1000)
         self.bullet_interval.start()
@@ -449,7 +452,7 @@ class StartMenu(Entity):
         img = pygame.transform.scale(img, (self.rect.width, self.rect.height))
         self.image = img
 
-        t = randrange(10_000, 30_000)
+        t = randrange(5_000, 10_000)
         self.timer = Timer(t)
         self.timer.start()
 
@@ -510,7 +513,7 @@ class Calendar(Entity):
         img = pygame.transform.scale(img, (self.rect.width, self.rect.height))
         self.image = img
 
-        t = randrange(10_000, 30_000)
+        t = randrange(5_000, 10_000)
         self.timer = Timer(t)
         self.timer.start()
 

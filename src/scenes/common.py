@@ -141,9 +141,6 @@ class Text(DirtySprite):
 
         surface = pygame.Surface(self.rect.size)
 
-        # TO REMOVE
-        surface.fill("purple")
-
         normal_rect = self.rect.copy()
         normal_rect.topleft = (0, 0)
         dest = rendered_text.get_rect(
