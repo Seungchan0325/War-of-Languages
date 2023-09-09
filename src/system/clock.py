@@ -36,7 +36,7 @@ class Clock(SingletonInstane):
 class Timer:
 
     def __init__(self, ms_: int):
-        self._ms = ms_
+        self.ms = ms_
         self._start = 0
         self.is_activate = False
 
@@ -53,7 +53,7 @@ class Timer:
 
     def remain(self):
         delta_time = self._time_ms() - self._start
-        return self._ms - delta_time
+        return self.ms - delta_time
 
     def over(self) -> bool:
         return self.is_activate and self.remain() <= 0

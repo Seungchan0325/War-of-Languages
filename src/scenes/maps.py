@@ -146,6 +146,8 @@ class BaseMap:
         self.space = Space()
         self.space.gravity = (0, -G)
 
+        self.background = Surface(Screen.instance().size)
+
         width = 1600
         height = 900
         thickness = 100
@@ -237,7 +239,7 @@ class Bullet(Entity):
         self.body.velocity_func = zero_gravity
 
     def collision_begin(self, arbiter: pymunk.Arbiter, space: Space, other: Entity) -> bool:
-        if other is not self.owner:
+        if other.shape.collision_type != CollisionTypes.BULLET.value and other is not self.owner:
             self.space.remove(self.shape, self.body)
             self.sprites.remove(self)
 
@@ -260,13 +262,16 @@ class Character(Entity):
         self.speed = 3000
         self.jump = 1400
         self.limit_speed = 300
+
         self.rpm = 400
+        self.bullet_damage = 10
+        self.bullet_impulse = 1500
 
-        self.timer = Timer(1 / (self.rpm / 60) * 1000)
-        self.timer.start()
+        self.bullet_interval = Timer(1 / (self.rpm / 60) * 1000)
+        self.bullet_interval.start()
 
-        self.grounded_cnt = 0
-        self.dir = 0
+        self._grounded_cnt = 0
+        self._dir = 1
 
         self._hitted_timer = Timer(300)
 
@@ -282,7 +287,7 @@ class Character(Entity):
 
     def collision_begin(self, arbiter: pymunk.Arbiter, space: Space, other: Entity) -> True:
         if other.shape.collision_type == CollisionTypes.GROUND.value:
-            self.grounded_cnt += 1
+            self._grounded_cnt += 1
 
         if other.shape.collision_type == CollisionTypes.BULLET.value:
             self.hp -= other.damage
@@ -292,37 +297,69 @@ class Character(Entity):
 
     def collision_end(self, arbiter: pymunk.Arbiter, space: Space, other: Entity):
         if other.shape.collision_type == CollisionTypes.GROUND.value:
-            self.grounded_cnt -= 1
+            self._grounded_cnt -= 1
 
     def update(self):
         super().update()
 
-        if self.grounded_cnt > 0 and self.input.jump():
+        if self._grounded_cnt > 0 and self.input.jump():
             self.apply_impulse((0, self.jump))
 
         if -self.limit_speed < self.body.velocity.x and self.input.left():
             self.apply_force((-self.speed, 0))
-            self.dir = -1
+            self._dir = -1
 
         if self.body.velocity.x < self.limit_speed and self.input.right():
             self.apply_force((self.speed, 0))
-            self.dir = 1
+            self._dir = 1
 
-        if self.timer.over() and self.input.basic_attack():
+        if self.bullet_interval.over() and self.input.basic_attack():
             pos = self.pos
-            if self.dir < 0:
+            if self._dir < 0:
                 pos.x.x -= 10
-            elif self.dir > 0:
+            elif self._dir > 0:
                 pos.x.x += 50
             pos.y.x += 25
-            bullet = Bullet(self.sprites, self.space, self, pos, 1)
-            bullet.apply_impulse((1500 * self.dir, 0))
+            bullet = Bullet(self.sprites, self.space, self, pos, self.bullet_damage)
+            bullet.apply_impulse((self.bullet_impulse * self._dir, 0))
 
-            self.timer.start()
+            self.bullet_interval.start()
 
         if self._hitted_timer.over():
             self.image = self._create_surface()
             self._hitted_timer.stop()
+
+
+class CppCharacter(Character):
+
+    def __init__(self, sprites: Group, space: Space, pos: Coord, my_input: BaseInput):
+        super().__init__(sprites, space, pos, my_input)
+        self.body.mass = 2.5
+
+        self.full_hp = 150.0
+        self.hp = 150.0
+
+        self.bullet_impulse = 1000
+        self.bullet_damage = 8
+
+        self.rpm = 80
+        self.bullet_interval = Timer(1 / (self.rpm / 60) * 1000)
+        self.bullet_interval.start()
+
+
+class PythonCharacter(Character):
+
+    def __init__(self, sprites: Group, space: Space, pos: Coord, my_input: BaseInput):
+        super().__init__(sprites, space, pos, my_input)
+        self.body.mass = 1.5
+
+        self.full_hp = 75
+        self.hp = 75
+
+        self.rpm = 800
+        self.bullet_damage = 1.5
+        self.bullet_interval = Timer(1 / (self.rpm / 60) * 1000)
+        self.bullet_interval.start()
 
 
 class P1Input(BaseInput):
@@ -368,6 +405,10 @@ class StartMenu(Entity):
 
         self.shape.collision_type = CollisionTypes.GROUND.value
         self.body.body_type = Body.KINEMATIC
+
+        img = pygame.image.load("resources/startmenu.png")
+        img = pygame.transform.scale(img, (self.rect.width, self.rect.height))
+        self.image = img
 
         t = randrange(10_000, 30_000)
         self.timer = Timer(t)
@@ -426,6 +467,10 @@ class Calendar(Entity):
         self.shape.collision_type = CollisionTypes.GROUND.value
         self.body.body_type = Body.KINEMATIC
 
+        img = pygame.image.load("resources/calender.png")
+        img = pygame.transform.scale(img, (self.rect.width, self.rect.height))
+        self.image = img
+
         t = randrange(10_000, 30_000)
         self.timer = Timer(t)
         self.timer.start()
@@ -483,6 +528,10 @@ class Taskbar(Entity):
         self.shape.collision_type = CollisionTypes.GROUND.value
         self.body.body_type = Body.STATIC
 
+        img = pygame.image.load("resources/taskbar.png")
+        img = pygame.transform.scale(img, (self.rect.width, self.rect.height))
+        self.image = img
+
 
 class Icon(Entity):
 
@@ -498,6 +547,8 @@ class WindowsMap(BaseMap):
     def __init__(self, sprites: Group):
         super().__init__(sprites)
 
+        self.background.fill("#18A8F1")
+
         StartMenu(self.sprites, self.space)
         Calendar(self.sprites, self.space)
         Taskbar(self.sprites, self.space)
@@ -505,5 +556,5 @@ class WindowsMap(BaseMap):
             for j in range(10):
                 Icon(self.sprites, self.space, Coord(j * 100 + 330, i * 230 + 100))
 
-        self.player1 = Character(self.sprites, self.space, Coord(0, 100), P1Input())
-        self.player2 = Character(self.sprites, self.space, Coord(1550, 100), P2Input())
+        self.player1 = CppCharacter(self.sprites, self.space, Coord(0, 100), P1Input())
+        self.player2 = PythonCharacter(self.sprites, self.space, Coord(1550, 100), P2Input())

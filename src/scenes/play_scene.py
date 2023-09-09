@@ -21,7 +21,7 @@ class HPBar(DirtySprite):
     def _create_surface(self) -> Surface:
         surface = Surface(self.rect.size)
 
-        surface.fill("purple")
+        surface.fill("black")
 
         hp = self.player.hp / self.player.full_hp
 
@@ -38,8 +38,7 @@ class HPBar(DirtySprite):
             else:
                 assert False, "Invalid, dir"
 
-            draw.rect(surface, "red", rect)
-
+            draw.rect(surface, "#009830", rect)
             text = render_text(
                 f"{int(self.player.hp)} / {int(self.player.full_hp)}".rjust(9),
                 self.rect.height // 2
@@ -61,6 +60,7 @@ class PlayScene(BaseScene):
         self.state = State.PLAYING
 
         self.map = WindowsMap(self.sprites)
+        self.background = self.map.background
 
         hp1rect = RatioRect(0, 0, 0.4, 0.05)
         hp1rect.right = 0.5
@@ -72,7 +72,7 @@ class PlayScene(BaseScene):
         hp2rect.top = 0
         self.sprites.add(HPBar(hp2rect, self.map.player2, "right"))
 
-        self.sprites.add(FPS(RatioRect(0, 0, 0.04, 0.03)))
+        # self.sprites.add(FPS(RatioRect(0, 0, 0.04, 0.03)))
 
     def update(self):
         super().update()
@@ -88,7 +88,7 @@ class PlayScene(BaseScene):
                 winner = "Player 1"
             else:
                 assert False
-            
+
             from scenes.game_over_scene import GameOverScene
             scenes.change_scene(GameOverScene(winner))
 
