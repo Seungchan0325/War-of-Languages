@@ -227,7 +227,7 @@ class BaseInput(abc.ABC):
 class Bullet(Entity):
 
     def __init__(self, sprites: Group, space: Space, owner: Entity, pos: Coord, damage: float, img: Surface):
-        super().__init__(sprites, space, pos, Size(10, 10))
+        super().__init__(sprites, space, pos, Size(20, 20))
         self.owner = owner
         self.damage = damage
 
@@ -324,8 +324,8 @@ class CppCharacter(Character):
         super().__init__(sprites, space, pos, my_input)
         self.body.mass = 2.5
 
-        self.full_hp = 150.0
-        self.hp = 150.0
+        self.full_hp = 125.0
+        self.hp = 125.0
 
         self.rpm = 80
 
@@ -336,7 +336,7 @@ class CppCharacter(Character):
         self.bullet_interval.start()
 
         self.bullet_img = pygame.image.load("resources/c_bullet.png")
-        self.bullet_img = pygame.transform.scale(self.bullet_img, Size(10, 10).to_px())
+        self.bullet_img = pygame.transform.scale(self.bullet_img, Size(20, 20).to_px())
 
         self._hitted_timer = Timer(100)
 
@@ -378,7 +378,7 @@ class PythonCharacter(Character):
         self.bullet_interval.start()
 
         self.bullet_img = pygame.image.load("resources/python_bullet.png")
-        self.bullet_img = pygame.transform.scale(self.bullet_img, Size(10, 10).to_px())
+        self.bullet_img = pygame.transform.scale(self.bullet_img, Size(20, 20).to_px())
 
         self._hitted_timer = Timer(100)
 

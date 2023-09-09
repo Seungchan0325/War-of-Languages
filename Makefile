@@ -8,9 +8,6 @@ debug_run: $(VENV)/Scripts/activate
 run: $(VENV)/Scripts/activate
 	$(PYTHON) -O src/main.py
 
-lint: $(VENV)/Scripts/activate
-	pylint src/
-
 $(VENV)/Scripts/activate: requirements.txt
 	python -m venv $(VENV)
 	$(PYTHON) -m pip install --upgrade pip
