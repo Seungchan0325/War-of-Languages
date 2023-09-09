@@ -79,6 +79,9 @@ class GameOverScene(BaseScene):
         self.sprites.add(GameOverMenu(winner))
         self.sprites.add(BackButton())
 
+    def update(self):
+        self.sprites.update()
+
     def render(self):
         screen = Screen.instance()
         screen.render(self.background, self.sprites)
